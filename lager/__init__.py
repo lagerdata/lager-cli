@@ -5,4 +5,4 @@ A Command Line Interface for Lager Data
 """
 
 
-__version__ = '0.0.1b'
+__version__ = '0.1.1'

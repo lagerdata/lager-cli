@@ -26,7 +26,7 @@ def load_auth():
     except FileNotFoundError:
         return None
 
-    if 'AUTH' not in config:
+    if 'AUTH' not in config or 'Token' not in config['AUTH']:
         return None
 
     return config['AUTH']

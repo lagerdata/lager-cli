@@ -33,7 +33,7 @@ cli.add_command(login)
 cli.add_command(logout)
 
 def check_auth(ctx):
-    ctx.auth = load_auth()
-    if not ctx.auth:
+    ctx.obj = load_auth()
+    if not ctx.obj:
         click.echo('Please login using `lager login` first')
         click.get_current_context().exit(0)

@@ -3,8 +3,7 @@
 
     Command line interface entry point
 """
-import os
-import configparser
+import traceback
 import click
 from lager import __version__
 
@@ -33,7 +32,18 @@ cli.add_command(login)
 cli.add_command(logout)
 
 def check_auth(ctx):
-    ctx.obj = load_auth()
+    """
+        Ensure the user has a valid authorization
+    """
+    try:
+        ctx.obj = load_auth()
+    except Exception:  # pylint: disable=broad-except
+        trace = traceback.format_exc()
+        click.secho(trace, fg='red')
+        click.echo('Something went wrong. Please run `lager logout` followed by `lager login`')
+        click.echo('For additional assistance please send the above traceback (in red) to support@lagerdata.com')
+        click.get_current_context().exit(0)
+
     if not ctx.obj:
         click.echo('Please login using `lager login` first')
         click.get_current_context().exit(0)

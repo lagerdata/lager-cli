@@ -4,21 +4,15 @@
     auth commands
 """
 
-import os
 import time
 import configparser
 import webbrowser
 import requests
 import click
-from lager.auth import get_config_file_path
-
-_DEFAULT_CLIENT_ID = 'Ev4qdcEYIrj4TJLJhJGhhKI9wqWbT7IE'
-_DEFAULT_AUDIENCE = 'https://lagerdata.com/api/gateway'
-_DEFAULT_AUTH_URL = 'https://lagerdata.auth0.com'
-
-CLIENT_ID = os.getenv('LAGER_CLIENT_ID', _DEFAULT_CLIENT_ID)
-AUDIENCE = os.getenv('LAGER_AUDIENCE', _DEFAULT_AUDIENCE)
-AUTH_URL = os.getenv('LAGER_AUTH_URL', _DEFAULT_AUTH_URL)
+from lager.auth import (
+    CLIENT_ID, AUTH_URL, AUDIENCE,
+    read_config_file, write_config_file,
+)
 
 SCOPE = 'read:gateway flash:duck offline_access'
 
@@ -31,7 +25,7 @@ def poll_for_token(device_code, interval):
         'device_code': device_code,
         'client_id': CLIENT_ID,
     }
-    token_url = '{}/oauth/token'.format(AUTH_URL)
+    token_url = '{}oauth/token'.format(AUTH_URL)
     while True:
         resp = requests.post(token_url, data=data)
         if resp.status_code == 200:
@@ -67,7 +61,7 @@ def login():
         'scope': SCOPE,
         'client_id': CLIENT_ID,
     }
-    code_url = '{}/oauth/device/code'.format(AUTH_URL)
+    code_url = '{}oauth/device/code'.format(AUTH_URL)
     response = requests.post(code_url, data=data)
     response.raise_for_status()
 
@@ -94,12 +88,11 @@ def login():
 
     config = configparser.ConfigParser()
     config['AUTH'] = {
-        'Token': payload['access_token'],
-        'Type': payload['token_type'],
-        'Refresh': payload['refresh_token'],
+        'token': payload['access_token'],
+        'type': payload['token_type'],
+        'refresh': payload['refresh_token'],
     }
-    with open(get_config_file_path(), 'w') as f:
-        config.write(f)
+    write_config_file(config)
 
 @click.command()
 def logout():
@@ -108,13 +101,11 @@ def logout():
     """
     config = configparser.ConfigParser()
     try:
-        with open(get_config_file_path()) as f:
-            config.read_file(f)
+        read_config_file(config)
     except FileNotFoundError:
         return
 
     if 'AUTH' in config:
         del config['AUTH']
 
-    with open(get_config_file_path(), 'w') as f:
-        config.write(f)
+    write_config_file(config)

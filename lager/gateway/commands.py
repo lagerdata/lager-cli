@@ -4,6 +4,7 @@
     Gateway commands
 """
 import os
+import itertools
 import requests
 import click
 
@@ -20,24 +21,17 @@ def gateway():
 @gateway.command()
 @click.pass_context
 @click.argument('name')
-@click.argument('hexfile')
+@click.option('--hexfile', multiple=True, required=True, type=click.Path(exists=True))
 def flash(ctx, name, hexfile):
     """
         Flash gateway
     """
-    try:
-        hexfile = open(hexfile)
-    except FileNotFoundError:
-        click.secho('{} not found!'.format(hexfile), err=True, fg='red')
-        ctx.exit()
     url = '{}/api/v1/gateway/{}/flash-duck'.format(HOST, name)
     auth = ctx.obj
     headers = {
         'Authorization': '{} {}'.format(auth['type'], auth['token'])
     }
-    files = {
-        'hexfile': hexfile,
-    }
+    files = zip(itertools.repeat('hexfile'), [open(path) for path in hexfile])
     resp = requests.post(url, files=files, headers=headers, verify=False)
     resp.raise_for_status()
-    print(resp.json())
+    print(resp.content)

@@ -5,7 +5,6 @@
 """
 
 import time
-import configparser
 import webbrowser
 import requests
 import click
@@ -82,11 +81,11 @@ def login():
         click.echo('And confirm your device token: ', nl=False)
         click.secho(user_code, fg='green')
 
-    click.echo('Awaiting login...')
+    click.echo('Awaiting confirmation... (Could take up to 5 seconds)')
     payload = poll_for_token(code_response['device_code'], code_response['interval'])
     click.secho('Success! You\'re ready to use Lager!', fg='green')
 
-    config = configparser.ConfigParser()
+    config = read_config_file()
     config['AUTH'] = {
         'token': payload['access_token'],
         'type': payload['token_type'],
@@ -99,9 +98,8 @@ def logout():
     """
         Log out
     """
-    config = configparser.ConfigParser()
     try:
-        read_config_file(config)
+        config = read_config_file()
     except FileNotFoundError:
         return
 

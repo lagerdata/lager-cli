@@ -10,22 +10,19 @@ import time
 import configparser
 import datetime
 import requests
+from lager.config import read_config_file, write_config_file
 
 _DEFAULT_CLIENT_ID = 'Ev4qdcEYIrj4TJLJhJGhhKI9wqWbT7IE'
 _DEFAULT_AUDIENCE = 'https://lagerdata.com/api/gateway'
-_DEFAULT_AUTH_URL = 'https://lagerdata.auth0.com'
+_DEFAULT_AUTH_URL = 'https://lagerdata.auth0.com/'
 
 CLIENT_ID = os.getenv('LAGER_CLIENT_ID', _DEFAULT_CLIENT_ID)
 AUDIENCE = os.getenv('LAGER_AUDIENCE', _DEFAULT_AUDIENCE)
 AUTH_URL = os.getenv('LAGER_AUTH_URL', _DEFAULT_AUTH_URL)
 
-_LAGER_CONFIG_FILE_NAME = '.lager'
 _JWK_PATH = '.well-known/jwks.json'
 
 _EXPIRY_GRACE = datetime.timedelta(hours=1).seconds
-
-def _get_config_file_path():
-    return os.path.join(os.path.expanduser('~'), _LAGER_CONFIG_FILE_NAME)
 
 def _get_jwks(jwk_url):
     resp = requests.get(jwk_url)
@@ -48,30 +45,11 @@ def _refresh(refresh_token):
     resp.raise_for_status()
     return resp.json()
 
-def read_config_file(config):
-    """
-        Read our config file into `config` object
-    """
-    with open(_get_config_file_path()) as f:
-        config.read_file(f)
-
-def write_config_file(config):
-    """
-        Write out `config` into our config file
-    """
-    with open(_get_config_file_path(), 'w') as f:
-        config.write(f)
-
 def load_auth():
     """
         Load auth token from config
     """
-    config = configparser.ConfigParser()
-    try:
-        with open(_get_config_file_path()) as f:
-            config.read_file(f)
-    except FileNotFoundError:
-        return None
+    config = read_config_file()
 
     if 'AUTH' not in config or 'token' not in config['AUTH']:
         return None

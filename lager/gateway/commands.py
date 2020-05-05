@@ -3,13 +3,8 @@
 
     Gateway commands
 """
-import os
 import itertools
-import requests
-import urllib3
 import click
-
-_DEFAULT_HOST = 'https://lagerdata.com'
 
 @click.group()
 def gateway():
@@ -26,18 +21,34 @@ def flash(ctx, name, hexfile):
     """
         Flash gateway
     """
-    host = os.getenv('LAGER_HOST', _DEFAULT_HOST)
-    verify = 'NOVERIFY' not in os.environ
-    if not verify:
-        urllib3.disable_warnings()
 
-    url = '{}/api/v1/gateway/{}/flash-duck'.format(host, name)
-    auth = ctx.obj
-    headers = {
-        'Authorization': '{} {}'.format(auth['type'], auth['token'])
-    }
-    files = zip(itertools.repeat('hexfile'), [open(path) for path in hexfile])
-    resp = requests.post(url, files=files, headers=headers, verify=verify, stream=True)
+    session = ctx.obj.session
+    url = 'gateway/{}/flash-duck'.format(name)
+    files = zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile])
+    resp = session.post(url, files=files, stream=True)
     resp.raise_for_status()
-    for chunk in resp.iter_content(chunk_size=None):
-        print(chunk.decode(), end='', flush=True)
+    separator = None
+    in_tests = False
+    for line in resp.iter_lines():
+        if separator is None:
+            separator = line
+            continue
+        if line == separator:
+            in_tests = True
+            continue
+        if not in_tests:
+            print(line.decode(), flush=True)
+        else:
+            if line.endswith(b':FAIL'):
+                print('\x1b[31m', flush=True, end='')
+                print(line.decode(), flush=True)
+                print('\x1b[0m', flush=True, end='')
+            elif line.endswith(b':SUCCESS'):
+                print('\x1b[32m', flush=True, end='')
+                print(line.decode(), flush=True)
+                print('\x1b[0m', flush=True, end='')
+            else:
+                print('\x1b[35;40m', flush=True, end='')
+                print(line.decode(), flush=True)
+                print('\x1b[0m', flush=True, end='')
+        # print(chunk.decode(), end='', flush=True)

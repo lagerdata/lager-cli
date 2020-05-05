@@ -15,12 +15,23 @@ def gateway():
 
 @gateway.command()
 @click.pass_context
-@click.argument('name')
+@click.argument('name', required=False)
 @click.option('--hexfile', multiple=True, required=True, type=click.Path(exists=True))
 def flash(ctx, name, hexfile):
     """
         Flash gateway
     """
+    if name is None:
+        name = ctx.obj.default_gateway
+
+    if name is None:
+        hint = 'NAME. Set a default using `lager set default gateway <id>`'
+        raise click.MissingParameter(
+            param=flash.params[0],
+            param_hint=hint,
+            ctx=ctx,
+            param_type='argument',
+        )
 
     session = ctx.obj.session
     url = 'gateway/{}/flash-duck'.format(name)

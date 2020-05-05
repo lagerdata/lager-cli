@@ -27,8 +27,5 @@ def gateway(gateway_id):
         Set default gateway
     """
     config = read_config_file()
-    if 'LAGER' not in config:
-        config.add_section('LAGER')
-
     config.set('LAGER', 'gateway_id', gateway_id)
     write_config_file(config)

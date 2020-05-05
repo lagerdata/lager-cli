@@ -21,6 +21,9 @@ def read_config_file():
             config.read_file(f)
     except FileNotFoundError:
         pass
+
+    if 'LAGER' not in config:
+        config.add_section('LAGER')
     return config
 
 def write_config_file(config):

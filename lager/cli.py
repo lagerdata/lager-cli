@@ -11,6 +11,7 @@ import click
 from requests_toolbelt.sessions import BaseUrlSession
 
 from lager import __version__
+from lager.config import read_config_file
 from lager.context import LagerContext
 
 from .gateway.commands import gateway
@@ -24,7 +25,7 @@ _DEFAULT_HOST = 'https://lagerdata.com'
 @click.group(invoke_without_command=True)
 @click.pass_context
 @click.option('--version', 'see_version', is_flag=True, help='See package version')
-def cli(ctx, see_version):
+def cli(ctx=None, see_version=None):
     """
         Lager CLI
     """
@@ -34,7 +35,7 @@ def cli(ctx, see_version):
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
     else:
-        if ctx.invoked_subcommand not in ('login', 'logout'):
+        if ctx.invoked_subcommand not in ('login', 'logout', 'set'):
             check_auth(ctx)
 
 cli.add_command(gateway)
@@ -73,6 +74,8 @@ def check_auth(ctx):
     session.headers.update(auth_header)
     session.verify = verify
 
+    config = read_config_file()
     ctx.obj = LagerContext(
         session=session,
+        defaults=config['LAGER'],
     )

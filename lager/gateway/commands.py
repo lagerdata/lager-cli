@@ -33,6 +33,7 @@ def flash(ctx, name, hexfile):
             param_type='argument',
         )
 
+    colored = ctx.obj.colored
     session = ctx.obj.session
     url = 'gateway/{}/flash-duck'.format(name)
     files = zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile])
@@ -47,19 +48,13 @@ def flash(ctx, name, hexfile):
         if line == separator:
             in_tests = True
             continue
+        line = line.decode()
         if not in_tests:
-            print(line.decode(), flush=True)
+            print(line, flush=True)
         else:
-            if line.endswith(b':FAIL'):
-                print('\x1b[31m', flush=True, end='')
-                print(line.decode(), flush=True)
-                print('\x1b[0m', flush=True, end='')
-            elif line.endswith(b':SUCCESS'):
-                print('\x1b[32m', flush=True, end='')
-                print(line.decode(), flush=True)
-                print('\x1b[0m', flush=True, end='')
+            if line.endswith(':FAIL'):
+                print(colored(line, 'red'), flush=True)
+            elif line.endswith(':SUCCESS'):
+                print(colored(line, 'green'), flush=True)
             else:
-                print('\x1b[35;40m', flush=True, end='')
-                print(line.decode(), flush=True)
-                print('\x1b[0m', flush=True, end='')
-        # print(chunk.decode(), end='', flush=True)
+                print(line, flush=True)

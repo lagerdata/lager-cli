@@ -8,7 +8,9 @@ import os
 
 import urllib3
 import click
+import colorama
 from requests_toolbelt.sessions import BaseUrlSession
+from termcolor import colored
 
 from lager import __version__
 from lager.config import read_config_file
@@ -25,7 +27,8 @@ _DEFAULT_HOST = 'https://lagerdata.com'
 @click.group(invoke_without_command=True)
 @click.pass_context
 @click.option('--version', 'see_version', is_flag=True, help='See package version')
-def cli(ctx=None, see_version=None):
+@click.option('--colorize', 'colorize', is_flag=True, help='Color output', default=False)
+def cli(ctx=None, see_version=None, colorize=False):
     """
         Lager CLI
     """
@@ -36,7 +39,7 @@ def cli(ctx=None, see_version=None):
         click.echo(ctx.get_help())
     else:
         if ctx.invoked_subcommand not in ('login', 'logout', 'set'):
-            check_auth(ctx)
+            setup_context(ctx, colorize)
 
 cli.add_command(gateway)
 cli.add_command(setter)
@@ -44,10 +47,13 @@ cli.add_command(lister)
 cli.add_command(login)
 cli.add_command(logout)
 
-def check_auth(ctx):
+def setup_context(ctx, colorize):
     """
         Ensure the user has a valid authorization
     """
+    if colorize:
+        colorama.init()
+
     try:
         auth = load_auth()
     except Exception:  # pylint: disable=broad-except
@@ -78,4 +84,5 @@ def check_auth(ctx):
     ctx.obj = LagerContext(
         session=session,
         defaults=config['LAGER'],
+        colored=colored if colorize else lambda x, *args: x,
     )

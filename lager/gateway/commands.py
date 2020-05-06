@@ -13,6 +13,9 @@ def gateway():
     """
     pass
 
+def _last_line(line):
+    return line in ('FAIL', 'PASS')
+
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
@@ -41,6 +44,9 @@ def flash(ctx, name, hexfile):
     resp.raise_for_status()
     separator = None
     in_tests = False
+    has_fail = False
+    in_summary = False
+    summary_separator = '-----------------------'
     for line in resp.iter_lines():
         if separator is None:
             separator = line
@@ -52,9 +58,20 @@ def flash(ctx, name, hexfile):
         if not in_tests:
             print(line, flush=True)
         else:
-            if line.endswith(':FAIL'):
-                print(colored(line, 'red'), flush=True)
-            elif line.endswith(':SUCCESS'):
-                print(colored(line, 'green'), flush=True)
+            if line == summary_separator:
+                in_summary = True
+                print(line)
+                continue
+            if in_summary:
+                color = 'red' if has_fail else 'green'
+                print(colored(line, color))
             else:
-                print(line, flush=True)
+                if ':FAIL' in line:
+                    has_fail = True
+                    print(colored(line, 'red'), flush=True)
+                elif ':PASS' in line:
+                    print(colored(line, 'green'), flush=True)
+                elif ':INFO' in line:
+                    print(colored(line, 'yellow'), flush=True)
+                else:
+                    print(line, flush=True)

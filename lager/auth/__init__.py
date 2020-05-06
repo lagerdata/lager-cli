@@ -45,19 +45,37 @@ def _refresh(refresh_token):
     resp.raise_for_status()
     return resp.json()
 
+AUTH_TOKEN_KEY = 'LAGER_AUTH_TOKEN'
+REFRESH_TOKEN_KEY = 'LAGER_REFRESH_TOKEN'
+TOKEN_TYPE_KEY = 'LAGER_TOKEN_TYPE'
+def _load_auth_from_environ(env):
+    if AUTH_TOKEN_KEY in env and REFRESH_TOKEN_KEY in env and TOKEN_TYPE_KEY in env:
+        return dict(
+            token=env[AUTH_TOKEN_KEY],
+            refresh=env[REFRESH_TOKEN_KEY],
+            type=env[TOKEN_TYPE_KEY],
+        )
+    return None
+
 def load_auth():
     """
-        Load auth token from config
+        Load auth token from environment if available, otherwise config
     """
-    config = read_config_file()
+    auth = None
+    update_config = False
+    auth = _load_auth_from_environ(os.environ)
+    if not auth:
+        config = read_config_file()
+        if 'AUTH' not in config or 'token' not in config['AUTH']:
+            return None
+        update_config = True
+        auth = config['AUTH']
 
-    if 'AUTH' not in config or 'token' not in config['AUTH']:
-        return None
+    if _is_expired(auth['token']):
+        fresh_token = _refresh(auth['refresh'])
+        auth['token'] = fresh_token['access_token']
+        auth['type'] = fresh_token['token_type']
+        if update_config:
+            write_config_file(config)
 
-    if _is_expired(config['AUTH']['token']):
-        fresh_token = _refresh(config['AUTH']['refresh'])
-        config['AUTH']['token'] = fresh_token['access_token']
-        config['AUTH']['type'] = fresh_token['token_type']
-        write_config_file(config)
-
-    return config['AUTH']
+    return auth

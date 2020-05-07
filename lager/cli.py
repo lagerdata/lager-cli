@@ -9,7 +9,6 @@ import os
 import urllib3
 import click
 from requests_toolbelt.sessions import BaseUrlSession
-from termcolor import colored
 
 from lager import __version__
 from lager.config import read_config_file

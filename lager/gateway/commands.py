@@ -56,8 +56,8 @@ def serial_numbers(ctx, name, model):
     url = 'gateway/{}/serial-numbers'.format(name)
     resp = session.get(url, params={'model': model})
     _handle_errors(resp, ctx)
-    for serial in resp.json()['serialnums']:
-        click.echo(serial)
+    for device in resp.json()['devices']:
+        click.echo('{vendor} {model}: {serial}'.format(**device))
 
 
 @gateway.command()

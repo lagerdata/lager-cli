@@ -44,7 +44,7 @@ def _handle_errors(resp, ctx):
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
-@click.option('--model', required=True)
+@click.option('--model', required=False)
 def serial_numbers(ctx, name, model):
     """
         Get serial numbers of devices attached to gateway

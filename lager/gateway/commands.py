@@ -6,6 +6,18 @@
 import itertools
 import click
 
+def _get_default_gateway(ctx, func):
+    name = ctx.obj.default_gateway
+    if name is None:
+        hint = 'NAME. Set a default using `lager set default gateway <id>`'
+        raise click.MissingParameter(
+            param=func.params[0],
+            param_hint=hint,
+            ctx=ctx,
+            param_type='argument',
+        )
+    return name
+
 @click.group()
 def gateway():
     """
@@ -16,22 +28,32 @@ def gateway():
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
+@click.option('--model', required=True)
+def serial_numbers(ctx, name, model):
+    """
+        Get serial numbers of devices attached to gateway
+    """
+    if name is None:
+        name = _get_default_gateway(ctx, serial_numbers)
+
+    session = ctx.obj.session
+    url = 'gateway/{}/serial-numbers'.format(name)
+    resp = session.get(url, params={'model': model})
+    resp.raise_for_status()
+    for serial in resp.json()['serialnums']:
+        print(serial)
+
+
+@gateway.command()
+@click.pass_context
+@click.argument('name', required=False)
 @click.option('--hexfile', multiple=True, required=True, type=click.Path(exists=True))
 def flash(ctx, name, hexfile):
     """
         Flash gateway
     """
     if name is None:
-        name = ctx.obj.default_gateway
-
-    if name is None:
-        hint = 'NAME. Set a default using `lager set default gateway <id>`'
-        raise click.MissingParameter(
-            param=flash.params[0],
-            param_hint=hint,
-            ctx=ctx,
-            param_type='argument',
-        )
+        name = _get_default_gateway(ctx, flash)
 
     colored = ctx.obj.colored
     session = ctx.obj.session

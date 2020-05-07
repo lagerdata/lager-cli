@@ -15,7 +15,7 @@ def read_config_file():
     """
         Read our config file into `config` object
     """
-    config = configparser.ConfigParser()
+    config = configparser.SafeConfigParser()
     try:
         with open(_get_config_file_path()) as f:
             config.read_file(f)
@@ -32,5 +32,3 @@ def write_config_file(config):
     """
     with open(_get_config_file_path(), 'w') as f:
         config.write(f)
-
-

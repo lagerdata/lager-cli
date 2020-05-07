@@ -7,7 +7,6 @@ import os
 import base64
 import json
 import time
-import configparser
 import datetime
 import requests
 from lager.config import read_config_file, write_config_file
@@ -31,7 +30,8 @@ def _get_jwks(jwk_url):
 
 def _is_expired(token):
     _header, encoded_payload, _sig = token.split('.')
-    payload = json.loads(base64.b64decode(encoded_payload))
+    padding = '===='  # Auth0 token does not include padding
+    payload = json.loads(base64.b64decode(encoded_payload + padding))
     return payload['exp'] < time.time() + _EXPIRY_GRACE
 
 def _refresh(refresh_token):

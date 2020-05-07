@@ -81,7 +81,7 @@ def login():
         click.echo('And confirm your device token: ', nl=False)
         click.secho(user_code, fg='green')
 
-    click.echo('Awaiting confirmation... (Could take up to 5 seconds)')
+    click.echo('Awaiting confirmation... (Could take up to 5 seconds after clicking "Confirm" in your browser)')
     payload = poll_for_token(code_response['device_code'], code_response['interval'])
     click.secho('Success! You\'re ready to use Lager!', fg='green')
 

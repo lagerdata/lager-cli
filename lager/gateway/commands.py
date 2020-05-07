@@ -39,6 +39,14 @@ def serial_numbers(ctx, name, model):
     session = ctx.obj.session
     url = 'gateway/{}/serial-numbers'.format(name)
     resp = session.get(url, params={'model': model})
+    if resp.status_code == 404:
+        click.secho('You don\'t have a gateway with id `{}`'.format(name), fg='red', err=True)
+        click.secho(
+            'Please double check your login credentials and gateway id'.format(name),
+            fg='red',
+            err=True,
+        )
+        ctx.exit(1)
     resp.raise_for_status()
     for serial in resp.json()['serialnums']:
         print(serial)

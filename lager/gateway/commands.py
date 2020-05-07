@@ -63,20 +63,34 @@ def serial_numbers(ctx, name, model):
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
-@click.option('--hexfile', multiple=True, required=True, type=click.Path(exists=True))
-def flash(ctx, name, hexfile):
+@click.option(
+    '--hexfile',
+    multiple=True, required=True, type=click.Path(exists=True),
+    help='Hexfile(s) to flash. May be passed multiple times; files will be flashed in order.')
+@click.option(
+    '--serial',
+    help='Serial number of device to flash. Required if multiple DUTs connected to gateway')
+def flash(ctx, name, hexfile, serial):
     """
         Flash gateway
     """
     if name is None:
         name = _get_default_gateway(ctx)
 
-    colored = ctx.obj.colored
     session = ctx.obj.session
     url = 'gateway/{}/flash-duck'.format(name)
-    files = zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile])
+    files = list(zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile]))
+    if serial:
+        files.append(('snr', serial))
     resp = session.post(url, files=files, stream=True)
     _handle_errors(resp, ctx)
+    dump_flash_output(resp, ctx.obj.style)
+
+
+def dump_flash_output(resp, style):
+    """
+        Stream flash response output
+    """
     separator = None
     in_tests = False
     has_fail = False
@@ -91,22 +105,22 @@ def flash(ctx, name, hexfile):
             continue
         line = line.decode()
         if not in_tests:
-            print(line, flush=True)
+            click.echo(line)
         else:
             if line == summary_separator:
                 in_summary = True
-                print(line)
+                click.echo(line)
                 continue
             if in_summary:
                 color = 'red' if has_fail else 'green'
-                print(colored(line, color))
+                click.echo(style(line, fg=color))
             else:
                 if ':FAIL' in line:
                     has_fail = True
-                    print(colored(line, 'red'), flush=True)
+                    click.echo(style(line, fg='red'))
                 elif ':PASS' in line:
-                    print(colored(line, 'green'), flush=True)
+                    click.echo(style(line, fg='green'))
                 elif ':INFO' in line:
-                    print(colored(line, 'yellow'), flush=True)
+                    click.echo(style(line, fg='yellow'))
                 else:
-                    print(line, flush=True)
+                    click.echo(line)

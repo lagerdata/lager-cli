@@ -8,7 +8,6 @@ import os
 
 import urllib3
 import click
-import colorama
 from requests_toolbelt.sessions import BaseUrlSession
 from termcolor import colored
 
@@ -51,9 +50,6 @@ def setup_context(ctx, colorize):
     """
         Ensure the user has a valid authorization
     """
-    if colorize:
-        colorama.init()
-
     try:
         auth = load_auth()
     except Exception:  # pylint: disable=broad-except
@@ -84,5 +80,5 @@ def setup_context(ctx, colorize):
     ctx.obj = LagerContext(
         session=session,
         defaults=config['LAGER'],
-        colored=colored if colorize else lambda x, *args: x,
+        style=click.style if colorize else lambda string, **kwargs: string,
     )

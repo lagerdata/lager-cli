@@ -8,10 +8,10 @@ class LagerContext:
     """
         Lager Context manager
     """
-    def __init__(self, session, defaults, colored):
+    def __init__(self, session, defaults, style):
         self.session = session
         self.defaults = defaults
-        self.colored = colored
+        self.style = style
 
     @property
     def default_gateway(self):

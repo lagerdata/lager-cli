@@ -6,12 +6,12 @@
 import itertools
 import click
 
-def _get_default_gateway(ctx, func):
+def _get_default_gateway(ctx):
     name = ctx.obj.default_gateway
     if name is None:
         hint = 'NAME. Set a default using `lager set default gateway <id>`'
         raise click.MissingParameter(
-            param=func.params[0],
+            param=ctx.command.params[0],
             param_hint=hint,
             ctx=ctx,
             param_type='argument',
@@ -25,6 +25,22 @@ def gateway():
     """
     pass
 
+def _handle_errors(resp, ctx):
+    if resp.status_code == 404:
+        name = ctx.params['name']
+        click.secho('You don\'t have a gateway with id `{}`'.format(name), fg='red', err=True)
+        click.secho(
+            'Please double check your login credentials and gateway id',
+            fg='red',
+            err=True,
+        )
+        ctx.exit(1)
+    if resp.status_code == 422:
+        error = resp.json()['error']
+        click.secho(error['description'], fg='red', err=True)
+        ctx.exit(1)
+    resp.raise_for_status()
+
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
@@ -34,22 +50,14 @@ def serial_numbers(ctx, name, model):
         Get serial numbers of devices attached to gateway
     """
     if name is None:
-        name = _get_default_gateway(ctx, serial_numbers)
+        name = _get_default_gateway(ctx)
 
     session = ctx.obj.session
     url = 'gateway/{}/serial-numbers'.format(name)
     resp = session.get(url, params={'model': model})
-    if resp.status_code == 404:
-        click.secho('You don\'t have a gateway with id `{}`'.format(name), fg='red', err=True)
-        click.secho(
-            'Please double check your login credentials and gateway id'.format(name),
-            fg='red',
-            err=True,
-        )
-        ctx.exit(1)
-    resp.raise_for_status()
+    _handle_errors(resp, ctx)
     for serial in resp.json()['serialnums']:
-        print(serial)
+        click.echo(serial)
 
 
 @gateway.command()
@@ -61,14 +69,14 @@ def flash(ctx, name, hexfile):
         Flash gateway
     """
     if name is None:
-        name = _get_default_gateway(ctx, flash)
+        name = _get_default_gateway(ctx)
 
     colored = ctx.obj.colored
     session = ctx.obj.session
     url = 'gateway/{}/flash-duck'.format(name)
     files = zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile])
     resp = session.post(url, files=files, stream=True)
-    resp.raise_for_status()
+    _handle_errors(resp, ctx)
     separator = None
     in_tests = False
     has_fail = False

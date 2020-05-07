@@ -13,9 +13,6 @@ def gateway():
     """
     pass
 
-def _last_line(line):
-    return line in ('FAIL', 'PASS')
-
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)

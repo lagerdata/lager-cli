@@ -73,7 +73,8 @@ def serial_numbers(ctx, name, model):
 @click.option('--device', help='Target device type', required=True)
 @click.option('--interface', help='Target interface', required=True)
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
-def flash(ctx, name, hexfile, serial, device, interface, speed):
+@click.option('--erase/--no-erase', help='Erase target before flashing', default=True)
+def flash(ctx, name, hexfile, serial, device, interface, speed, erase):
     """
         Flash gateway
     """
@@ -85,6 +86,8 @@ def flash(ctx, name, hexfile, serial, device, interface, speed):
     files = list(zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile]))
     if serial:
         files.append(('snr', serial))
+    if erase:
+        files.append(('erase', '1'))
     files.append(('device', device))
     files.append(('interface', interface))
     files.append(('speed', speed))

@@ -70,7 +70,10 @@ def serial_numbers(ctx, name, model):
 @click.option(
     '--serial',
     help='Serial number of device to flash. Required if multiple DUTs connected to gateway')
-def flash(ctx, name, hexfile, serial):
+@click.option('--device', help='Target device type', required=True)
+@click.option('--interface', help='Target interface', required=True)
+@click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
+def flash(ctx, name, hexfile, serial, device, interface, speed):
     """
         Flash gateway
     """
@@ -82,6 +85,10 @@ def flash(ctx, name, hexfile, serial):
     files = list(zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile]))
     if serial:
         files.append(('snr', serial))
+    files.append(('device', device))
+    files.append(('interface', interface))
+    files.append(('speed', speed))
+
     resp = session.post(url, files=files, stream=True)
     _handle_errors(resp, ctx)
     dump_flash_output(resp, ctx.obj.style)

@@ -94,13 +94,14 @@ def flash(ctx, name, hexfile, serial, device, interface, speed, erase):
 
     resp = session.post(url, files=files, stream=True)
     _handle_errors(resp, ctx)
-    dump_flash_output(resp, ctx.obj.style)
+    dump_flash_output(resp, ctx)
 
 
-def dump_flash_output(resp, style):
+def dump_flash_output(resp, ctx):
     """
         Stream flash response output
     """
+    style = ctx.obj.style
     separator = None
     in_tests = False
     has_fail = False
@@ -134,3 +135,5 @@ def dump_flash_output(resp, style):
                     click.echo(style(line, fg='yellow'))
                 else:
                     click.echo(line)
+    if has_fail:
+        ctx.exit(2)

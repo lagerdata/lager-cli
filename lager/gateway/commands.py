@@ -136,4 +136,4 @@ def dump_flash_output(resp, ctx):
                 else:
                     click.echo(line)
     if has_fail:
-        ctx.exit(2)
+        ctx.exit(1)

@@ -96,7 +96,6 @@ def flash(ctx, name, hexfile, serial, device, interface, speed, erase):
     _handle_errors(resp, ctx)
     dump_flash_output(resp, ctx)
 
-
 def dump_flash_output(resp, ctx):
     """
         Stream flash response output
@@ -107,7 +106,7 @@ def dump_flash_output(resp, ctx):
     has_fail = False
     in_summary = False
     summary_separator = '-----------------------'
-    for line in resp.iter_lines():
+    for line in resp.iter_lines(chunk_size=8):
         if separator is None:
             separator = line
             continue

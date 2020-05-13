@@ -4,6 +4,7 @@
     Gateway commands
 """
 import itertools
+import json
 import click
 
 def _get_default_gateway(ctx):
@@ -74,7 +75,14 @@ def serial_numbers(ctx, name, model):
 @click.option('--interface', help='Target interface', required=True)
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
 @click.option('--erase/--no-erase', help='Erase target before flashing', default=True)
-def flash(ctx, name, hexfile, serial, device, interface, speed, erase):
+@click.option('--baud', help='Serial baud rate', type=int, default=None)
+@click.option('--bytesize', help='Number of data bits', type=click.Choice(['5', '6', '7', '8']), default=None)
+@click.option('--parity', help='Parity check', type=click.Choice(['none', 'even', 'odd', 'mark', 'space']), default=None)
+@click.option('--stopbits', help='Number of stop bits', type=click.Choice(['1', '1.5', '2']), default=None)
+@click.option('--xonxoff/--no-xonxoff', default=None, help='Enable/disable software XON/XOFF flow control')
+@click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
+@click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
+def flash(ctx, name, hexfile, serial, device, interface, speed, erase, baud, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr):
     """
         Flash gateway
     """
@@ -91,6 +99,16 @@ def flash(ctx, name, hexfile, serial, device, interface, speed, erase):
     files.append(('device', device))
     files.append(('interface', interface))
     files.append(('speed', speed))
+    serial_options = {
+        'baud': baud,
+        'bytesize': bytesize,
+        'parity': parity,
+        'stopbits': stopbits,
+        'xonxoff': xonxoff,
+        'rtscts': rtscts,
+        'dsrdtr': dsrdtr,
+    }
+    files.append(('serial_options', json.dumps(serial_options)))
 
     resp = session.post(url, files=files, stream=True)
     _handle_errors(resp, ctx)

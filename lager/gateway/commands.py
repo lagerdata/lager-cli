@@ -60,6 +60,23 @@ def serial_numbers(ctx, name, model):
     for device in resp.json()['devices']:
         click.echo('{vendor} {model}: {serial}'.format(**device))
 
+@gateway.command()
+@click.pass_context
+@click.argument('name', required=False)
+def serial_ports(ctx, name):
+    """
+        Get serial ports attached to gateway
+    """
+    if name is None:
+        name = _get_default_gateway(ctx)
+
+    session = ctx.obj.session
+    url = 'gateway/{}/serial-ports'.format(name)
+    resp = session.get(url)
+    _handle_errors(resp, ctx)
+    style = ctx.obj.style
+    for port in resp.json()['serial_ports']:
+        click.echo('{} - {}'.format(style(port['device'], fg='green'), port['description']))
 
 @gateway.command()
 @click.pass_context

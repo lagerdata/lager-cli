@@ -5,6 +5,8 @@
 """
 import itertools
 import json
+import collections
+import os
 import click
 
 def _get_default_gateway(ctx):
@@ -78,13 +80,63 @@ def serial_ports(ctx, name):
     for port in resp.json()['serial_ports']:
         click.echo('{} - {}'.format(style(port['device'], fg='green'), port['description']))
 
+class HexParamType(click.ParamType):
+    """
+        Hexadecimal integer parameter
+    """
+    name = 'hex'
+
+    def convert(self, value, param, ctx):
+        """
+            Parse string reprsentation of a hex integer
+        """
+        try:
+            return int(value, 16)
+        except ValueError:
+            self.fail(f"{value} is not a valid hex integer", param, ctx)
+
+    def __repr__(self):
+        return 'HEX'
+
+Binfile = collections.namedtuple('Binfile', ['path', 'address'])
+class BinfileType(click.ParamType):
+    """
+        Type to represent a command line argument for a binfile (<path>,<address>)
+    """
+    envvar_list_splitter = os.path.pathsep
+    name = 'binfile'
+
+    def __init__(self, *args, exists=False, **kwargs):
+        self.exists = exists
+        super().__init__(*args, **kwargs)
+
+    def convert(self, value, param, ctx):
+        """
+            Convert binfile param string into useable components
+        """
+        parts = value.rsplit(',', 1)
+        if len(parts) != 2:
+            self.fail(f'{value}. Syntax: --binfile <filename>,<address>', param, ctx)
+        filename, address = parts
+        path = click.Path(exists=self.exists).convert(filename, param, ctx)
+        address = HexParamType().convert(address, param, ctx)
+
+        return Binfile(path=path, address=address)
+
+    def __repr__(self):
+        return 'BINFILE'
+
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
 @click.option(
     '--hexfile',
-    multiple=True, required=True, type=click.Path(exists=True),
+    multiple=True, type=click.Path(exists=True),
     help='Hexfile(s) to flash. May be passed multiple times; files will be flashed in order.')
+@click.option(
+    '--binfile',
+    multiple=True, type=BinfileType(exists=True),
+    help='Binfile(s) to flash. Syntax: --binfile `<filename>,<address>` May be passed multiple times; files will be flashed in order.')
 @click.option(
     '--snr',
     help='Serial number of device to flash. Required if multiple DUTs connected to gateway')
@@ -100,16 +152,28 @@ def serial_ports(ctx, name):
 @click.option('--xonxoff/--no-xonxoff', default=None, help='Enable/disable software XON/XOFF flow control')
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
-def flash(ctx, name, hexfile, snr, serial_device, device, interface, speed, erase, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr):
+def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, speed, erase, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr):
     """
         Flash gateway
     """
+    if xonxoff and rtscts:
+        raise click.UsageError(
+            'Cannot use xonxoff and rtscts simultaneously',
+            ctx=ctx,
+        )
+
     if name is None:
         name = _get_default_gateway(ctx)
 
     session = ctx.obj.session
     url = 'gateway/{}/flash-duck'.format(name)
     files = list(zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile]))
+    files.extend(
+        zip(itertools.repeat('binfile'), [open(binf.path, 'rb') for binf in binfile])
+    )
+    files.extend(
+        zip(itertools.repeat('binfile_address'), [binf.address for binf in binfile])
+    )
     if snr:
         files.append(('snr', snr))
     if erase:

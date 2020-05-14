@@ -86,8 +86,9 @@ def serial_ports(ctx, name):
     multiple=True, required=True, type=click.Path(exists=True),
     help='Hexfile(s) to flash. May be passed multiple times; files will be flashed in order.')
 @click.option(
-    '--serial',
+    '--snr',
     help='Serial number of device to flash. Required if multiple DUTs connected to gateway')
+@click.option('--serial-device', help='Gateway serial port device')
 @click.option('--device', help='Target device type', required=True)
 @click.option('--interface', help='Target interface', required=True)
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
@@ -99,7 +100,7 @@ def serial_ports(ctx, name):
 @click.option('--xonxoff/--no-xonxoff', default=None, help='Enable/disable software XON/XOFF flow control')
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
-def flash(ctx, name, hexfile, serial, device, interface, speed, erase, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr):
+def flash(ctx, name, hexfile, snr, serial_device, device, interface, speed, erase, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr):
     """
         Flash gateway
     """
@@ -109,14 +110,15 @@ def flash(ctx, name, hexfile, serial, device, interface, speed, erase, baudrate,
     session = ctx.obj.session
     url = 'gateway/{}/flash-duck'.format(name)
     files = list(zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile]))
-    if serial:
-        files.append(('snr', serial))
+    if snr:
+        files.append(('snr', snr))
     if erase:
         files.append(('erase', '1'))
     files.append(('device', device))
     files.append(('interface', interface))
     files.append(('speed', speed))
     serial_options = {
+        'device': serial_device,
         'baudrate': baudrate,
         'bytesize': bytesize,
         'parity': parity,

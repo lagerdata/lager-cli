@@ -47,6 +47,21 @@ def _handle_errors(resp, ctx):
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
+def hello(ctx, name):
+    """
+        Say hello to gateway
+    """
+    if name is None:
+        name = _get_default_gateway(ctx)
+    session = ctx.obj.session
+    url = 'gateway/{}/hello'.format(name)
+    resp = session.get(url)
+    _handle_errors(resp, ctx)
+    click.echo(resp.content, nl=False)
+
+@gateway.command()
+@click.pass_context
+@click.argument('name', required=False)
 @click.option('--model', required=False)
 def serial_numbers(ctx, name, model):
     """

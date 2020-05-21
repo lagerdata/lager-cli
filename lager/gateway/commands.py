@@ -28,22 +28,6 @@ def gateway():
     """
     pass
 
-def _handle_errors(resp, ctx):
-    if resp.status_code == 404:
-        name = ctx.params['name']
-        click.secho('You don\'t have a gateway with id `{}`'.format(name), fg='red', err=True)
-        click.secho(
-            'Please double check your login credentials and gateway id',
-            fg='red',
-            err=True,
-        )
-        ctx.exit(1)
-    if resp.status_code == 422:
-        error = resp.json()['error']
-        click.secho(error['description'], fg='red', err=True)
-        ctx.exit(1)
-    resp.raise_for_status()
-
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
@@ -56,7 +40,6 @@ def hello(ctx, name):
     session = ctx.obj.session
     url = 'gateway/{}/hello'.format(name)
     resp = session.get(url)
-    _handle_errors(resp, ctx)
     click.echo(resp.content, nl=False)
 
 @gateway.command()
@@ -73,7 +56,6 @@ def serial_numbers(ctx, name, model):
     session = ctx.obj.session
     url = 'gateway/{}/serial-numbers'.format(name)
     resp = session.get(url, params={'model': model})
-    _handle_errors(resp, ctx)
     for device in resp.json()['devices']:
         device['serial'] = device['serial'].lstrip('0')
         click.echo('{vendor} {model}: {serial}'.format(**device))
@@ -91,7 +73,6 @@ def serial_ports(ctx, name):
     session = ctx.obj.session
     url = 'gateway/{}/serial-ports'.format(name)
     resp = session.get(url)
-    _handle_errors(resp, ctx)
     style = ctx.obj.style
     for port in resp.json()['serial_ports']:
         click.echo('{} - {}'.format(style(port['device'], fg='green'), port['description']))
@@ -214,7 +195,6 @@ def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, sp
         files.append(('force', '1'))
 
     resp = session.post(url, files=files, stream=True)
-    _handle_errors(resp, ctx)
     print(resp.json())
     # dump_flash_output(resp, ctx)
 
@@ -273,5 +253,4 @@ def jobs(ctx, name):
     session = ctx.obj.session
     url = 'gateway/{}/jobs'.format(name)
     resp = session.get(url)
-    _handle_errors(resp, ctx)
     print(resp.json())

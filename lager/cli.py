@@ -4,11 +4,7 @@
     Command line interface entry point
 """
 import traceback
-import os
-
-import urllib3
 import click
-from requests_toolbelt.sessions import BaseUrlSession
 
 from lager import __version__
 from lager.config import read_config_file
@@ -20,7 +16,6 @@ from .lister.commands import lister
 from .auth import load_auth
 from .auth.commands import login, logout
 
-_DEFAULT_HOST = 'https://lagerdata.com'
 
 @click.group(invoke_without_command=True)
 @click.pass_context
@@ -62,22 +57,9 @@ def setup_context(ctx, colorize):
         click.echo('Please login using `lager login` first')
         click.get_current_context().exit(0)
 
-    verify = 'NOVERIFY' not in os.environ
-    if not verify:
-        urllib3.disable_warnings()
-
-    host = os.getenv('LAGER_HOST', _DEFAULT_HOST)
-    base_url = '{}{}'.format(host, '/api/v1/')
-    session = BaseUrlSession(base_url=base_url)
-    auth_header = {
-        'Authorization': '{} {}'.format(auth['type'], auth['token'])
-    }
-    session.headers.update(auth_header)
-    session.verify = verify
-
     config = read_config_file()
     ctx.obj = LagerContext(
-        session=session,
+        auth=auth,
         defaults=config['LAGER'],
         style=click.style if colorize else lambda string, **kwargs: string,
     )

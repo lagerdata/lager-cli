@@ -168,7 +168,9 @@ class BinfileType(click.ParamType):
 @click.option('--xonxoff/--no-xonxoff', default=None, help='Enable/disable software XON/XOFF flow control')
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
-def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, speed, erase, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr):
+@click.option('--force', is_flag=True)
+def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, speed, erase,
+            baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, force):
     """
         Flash gateway
     """
@@ -208,10 +210,13 @@ def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, sp
         'dsrdtr': dsrdtr,
     }
     files.append(('serial_options', json.dumps(serial_options)))
+    if force:
+        files.append(('force', '1'))
 
     resp = session.post(url, files=files, stream=True)
     _handle_errors(resp, ctx)
-    dump_flash_output(resp, ctx)
+    print(resp.json())
+    # dump_flash_output(resp, ctx)
 
 def dump_flash_output(resp, ctx):
     """
@@ -253,3 +258,20 @@ def dump_flash_output(resp, ctx):
                     click.echo(line)
     if has_fail:
         ctx.exit(1)
+
+
+@gateway.command()
+@click.pass_context
+@click.argument('name', required=False)
+def jobs(ctx, name):
+    """
+        Get serial ports attached to gateway
+    """
+    if name is None:
+        name = _get_default_gateway(ctx)
+
+    session = ctx.obj.session
+    url = 'gateway/{}/jobs'.format(name)
+    resp = session.get(url)
+    _handle_errors(resp, ctx)
+    print(resp.json())

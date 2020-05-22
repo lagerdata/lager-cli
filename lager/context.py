@@ -4,12 +4,15 @@
     CLI context management
 """
 import os
+import urllib.parse
+from contextlib import asynccontextmanager
 import urllib3
 import requests
 import click
 from requests_toolbelt.sessions import BaseUrlSession
+import websockets
 _DEFAULT_HOST = 'https://lagerdata.com'
-
+_DEFAULT_WEBSOCKET_HOST = 'wss://ws.lagerdata.com'
 
 class LagerSession(BaseUrlSession):
     """
@@ -76,11 +79,13 @@ class LagerContext:  # pylint: disable=too-few-public-methods
     """
     def __init__(self, auth, defaults, style):
         host = os.getenv('LAGER_HOST', _DEFAULT_HOST)
+        ws_host = os.getenv('LAGER_WS_HOST', _DEFAULT_WEBSOCKET_HOST)
         base_url = '{}{}'.format(host, '/api/v1/')
 
         self.session = LagerSession(auth, base_url=base_url)
         self.defaults = defaults
         self.style = style
+        self.ws_host = ws_host
 
     @property
     def default_gateway(self):
@@ -88,3 +93,12 @@ class LagerContext:  # pylint: disable=too-few-public-methods
             Get default gateway id from config
         """
         return self.defaults.get('gateway_id')
+
+    @asynccontextmanager
+    async def websocket_connection(self, path):
+        """
+            Yields a websocket connection to the given path
+        """
+        uri = urllib.parse.urljoin(self.ws_host, path)
+        async with websockets.connect(uri) as websocket:
+            yield websocket

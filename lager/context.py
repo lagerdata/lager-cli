@@ -95,10 +95,19 @@ class LagerContext:  # pylint: disable=too-few-public-methods
         return self.defaults.get('gateway_id')
 
     @asynccontextmanager
-    async def websocket_connection(self, path):
+    async def websocket_connection(self, socktype, **kwargs):
         """
             Yields a websocket connection to the given path
         """
+        if socktype == 'job':
+            path = f'/job/{kwargs["job_id"]}'
+        else:
+            raise ValueError(f'Invalid websocket type: {socktype}')
         uri = urllib.parse.urljoin(self.ws_host, path)
-        async with websockets.connect(uri) as websocket:
+
+        headers = {
+            'Authorization': self.session.headers['Authorization'],
+        }
+
+        async with websockets.connect(uri, extra_headers=headers) as websocket:
             yield websocket

@@ -37,4 +37,4 @@ def status(ctx, job_id):
     """
         Get job status
     """
-    display_job_output(ctx.obj.websocket_connection(job_id))
+    display_job_output(ctx.obj.websocket_connection(socktype='job', job_id=job_id))

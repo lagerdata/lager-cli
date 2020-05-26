@@ -4,6 +4,7 @@
     Status commands
 """
 import asyncio
+import bson
 import click
 
 @click.group(name='job')
@@ -18,8 +19,10 @@ async def read_websocket_job_data(websocket_connection):
         Read
     """
     async with websocket_connection as websocket:
-        data = await websocket.recv()
-        print(data)
+        while True:
+            enc = await websocket.recv()
+            data = bson.loads(enc)
+            print(data)
 
 def display_job_output(websocket, loop=None):
     """

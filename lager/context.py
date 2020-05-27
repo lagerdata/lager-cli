@@ -94,8 +94,7 @@ class LagerContext:  # pylint: disable=too-few-public-methods
         """
         return self.defaults.get('gateway_id')
 
-    @asynccontextmanager
-    async def websocket_connection(self, socktype, **kwargs):
+    def websocket_connection_params(self, socktype, **kwargs):
         """
             Yields a websocket connection to the given path
         """
@@ -109,5 +108,4 @@ class LagerContext:  # pylint: disable=too-few-public-methods
             'Authorization': self.session.headers['Authorization'],
         }
 
-        async with websockets.connect(uri, extra_headers=headers) as websocket:
-            yield websocket
+        return (uri, dict(extra_headers=headers))

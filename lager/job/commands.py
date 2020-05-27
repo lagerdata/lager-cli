@@ -5,6 +5,7 @@
 """
 import asyncio
 import bson
+import websockets
 import click
 
 @click.group(name='job')
@@ -14,24 +15,18 @@ def job():
     """
     pass
 
-async def read_websocket_job_data(websocket_connection):
-    """
-        Read
-    """
-    async with websocket_connection as websocket:
-        while True:
-            enc = await websocket.recv()
-            data = bson.loads(enc)
-            print(data)
-
-def display_job_output(websocket, loop=None):
+async def display_job_output(connection_params):
     """
         Display job output from websocket
     """
-    if loop is None:
-        loop = asyncio.get_event_loop()
-
-    loop.run_until_complete(read_websocket_job_data(websocket))
+    (uri, kwargs) = connection_params
+    async with websockets.connect(uri, **kwargs) as websocket:
+        async for message in websocket:
+            parsed_message = bson.loads(message)['data']
+            for item in parsed_message:
+                entry = item['entry']
+                if 'payload' in entry:
+                    click.echo(entry['payload'].decode(), nl=False)
 
 @job.command()
 @click.pass_context
@@ -40,4 +35,5 @@ def status(ctx, job_id):
     """
         Get job status
     """
-    display_job_output(ctx.obj.websocket_connection(socktype='job', job_id=job_id))
+    connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
+    asyncio.run(display_job_output(connection_params), debug=True)

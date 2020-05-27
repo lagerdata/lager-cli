@@ -8,6 +8,7 @@ import json
 import collections
 import os
 import click
+from lager.status import run_job_output
 
 def _get_default_gateway(ctx):
     name = ctx.obj.default_gateway
@@ -150,8 +151,9 @@ class BinfileType(click.ParamType):
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
 @click.option('--force', is_flag=True)
+@click.option('--follow/--no-follow', default=False, help='Display job output')
 def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, speed, erase,
-            baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, force):
+            baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, force, follow):
     """
         Flash gateway
     """
@@ -195,8 +197,13 @@ def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, sp
         files.append(('force', '1'))
 
     resp = session.post(url, files=files, stream=True)
-    print(resp.json())
-    # dump_flash_output(resp, ctx)
+    test_run = resp.json()
+    if follow:
+        job_id = test_run['test_run']['id']
+        connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
+        run_job_output(connection_params)
+    else:
+        click.echo(test_run)
 
 def dump_flash_output(resp, ctx):
     """

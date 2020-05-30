@@ -37,6 +37,8 @@ def run_job_output(connection_params):
     """
     try:
         asyncio.run(display_job_output(connection_params), debug=True)
+    except asyncio.CancelledError:
+        click.secho('Unexpected disconect from Lager API!', fg='red', err=True)
     except ConnectionRefusedError:
         click.secho('Could not connect to Lager API!', fg='red', err=True)
         click.get_current_context().exit(1)

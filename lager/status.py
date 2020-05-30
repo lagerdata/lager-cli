@@ -13,13 +13,23 @@ async def display_job_output(connection_params):
         Display job output from websocket
     """
     (uri, kwargs) = connection_params
-    async with websockets.connect(uri, **kwargs) as websocket:
-        async for message in websocket:
-            parsed_message = bson.loads(message)['data']
-            for item in parsed_message:
-                entry = item['entry']
-                if 'payload' in entry:
-                    click.echo(entry['payload'].decode(), nl=False)
+    try:
+        async with websockets.connect(uri, close_timeout=1, **kwargs) as websocket:
+            try:
+                async for message in websocket:
+                    parsed_message = bson.loads(message)['data']
+                    for item in parsed_message:
+                        entry = item['entry']
+                        if 'payload' in entry:
+                            click.echo(entry['payload'].decode(), nl=False)
+            except Exception as e:
+                for task in asyncio.all_tasks():
+                    task.cancel()
+                raise
+    except:
+        for task in asyncio.all_tasks():
+            task.cancel()
+        raise
 
 def run_job_output(connection_params):
     """

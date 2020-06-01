@@ -12,7 +12,7 @@ import requests
 from lager.config import read_config_file, write_config_file
 
 _DEFAULT_CLIENT_ID = 'Ev4qdcEYIrj4TJLJhJGhhKI9wqWbT7IE'
-_DEFAULT_AUDIENCE = 'https://lagerdata.com/api/gateway'
+_DEFAULT_AUDIENCE = 'https://lagerdata.com/gateway'
 _DEFAULT_AUTH_URL = 'https://lagerdata.auth0.com/'
 
 CLIENT_ID = os.getenv('LAGER_CLIENT_ID', _DEFAULT_CLIENT_ID)

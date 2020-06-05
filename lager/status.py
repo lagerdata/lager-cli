@@ -8,6 +8,31 @@ import bson
 import click
 import websockets
 
+def handle_url_message(urls):
+    """
+        Handle a message with data location urls
+    """
+    #TODO: handle messages
+
+def handle_data_message(message):
+    """
+        Handle a data message
+    """
+    for item in message:
+        entry = item['entry']
+        if 'payload' in entry:
+            click.echo(entry['payload'].decode(), nl=False)
+
+def handle_message(message):
+    """
+        Handle an individual parsed websocket message
+    """
+    if 'data' in message:
+        return handle_data_message(message['data'])
+    if 'urls' in message:
+        return handle_url_message(message['urls'])
+    return None
+
 async def display_job_output(connection_params):
     """
         Display job output from websocket
@@ -17,11 +42,7 @@ async def display_job_output(connection_params):
         async with websockets.connect(uri, close_timeout=1, **kwargs) as websocket:
             try:
                 async for message in websocket:
-                    parsed_message = bson.loads(message)['data']
-                    for item in parsed_message:
-                        entry = item['entry']
-                        if 'payload' in entry:
-                            click.echo(entry['payload'].decode(), nl=False)
+                    handle_message(bson.loads(message))
             except Exception as e:
                 for task in asyncio.all_tasks():
                     task.cancel()

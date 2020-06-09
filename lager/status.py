@@ -16,7 +16,7 @@ async def handle_url_message(urls):
     loop = asyncio.get_running_loop()
     for url in urls:
         response = await loop.run_in_executor(None, requests.get, url)
-        print(response)
+        click.echo(response.content.decode(), nl=False)
 
 async def handle_data_message(message):
     """

@@ -6,6 +6,7 @@ import os
 import contextlib
 from socket import AddressFamily  # pylint: disable=no-name-in-module
 import websockets
+import requests_mock
 import bson
 import pytest
 
@@ -63,11 +64,19 @@ def data_server(streaming_data):
     return handler_fn
 
 @pytest.fixture
-def download_urls():
-    return [
+def mock_response_content():
+    return 'response'
+
+@pytest.fixture
+def download_urls(mock_response_content):
+    urls = [
         'https://example.com',
         'https://example.com/foo',
     ]
+    with requests_mock.Mocker() as m:
+        for url in urls:
+            m.get(url, text=mock_response_content)
+        yield urls
 
 @pytest.fixture
 def download_server(download_urls):

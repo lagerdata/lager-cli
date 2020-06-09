@@ -77,7 +77,7 @@ class LagerContext:  # pylint: disable=too-few-public-methods
     """
         Lager Context manager
     """
-    def __init__(self, auth, defaults, style):
+    def __init__(self, auth, defaults, debug, style):
         host = os.getenv('LAGER_HOST', _DEFAULT_HOST)
         ws_host = os.getenv('LAGER_WS_HOST', _DEFAULT_WEBSOCKET_HOST)
         base_url = '{}{}'.format(host, '/api/v1/')
@@ -86,6 +86,7 @@ class LagerContext:  # pylint: disable=too-few-public-methods
         self.defaults = defaults
         self.style = style
         self.ws_host = ws_host
+        self.debug = debug
 
     @property
     def default_gateway(self):

@@ -202,7 +202,7 @@ def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, sp
         job_id = test_run['test_run']['id']
         click.echo('Job id: {}'.format(job_id))
         connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
-        run_job_output(connection_params)
+        run_job_output(connection_params, ctx.obj.debug)
     else:
         click.echo(test_run)
 

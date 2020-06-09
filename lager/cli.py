@@ -21,8 +21,9 @@ from .job.commands import job
 @click.group(invoke_without_command=True)
 @click.pass_context
 @click.option('--version', 'see_version', is_flag=True, help='See package version')
+@click.option('--debug', 'debug', is_flag=True, help='Show debug output', default=False)
 @click.option('--colorize', 'colorize', is_flag=True, help='Color output', default=False)
-def cli(ctx=None, see_version=None, colorize=False):
+def cli(ctx=None, see_version=None, debug=False, colorize=False):
     """
         Lager CLI
     """
@@ -33,7 +34,7 @@ def cli(ctx=None, see_version=None, colorize=False):
         click.echo(ctx.get_help())
     else:
         if ctx.invoked_subcommand not in ('login', 'logout', 'set'):
-            setup_context(ctx, colorize)
+            setup_context(ctx, debug, colorize)
 
 cli.add_command(gateway)
 cli.add_command(setter)
@@ -42,7 +43,7 @@ cli.add_command(login)
 cli.add_command(logout)
 cli.add_command(job)
 
-def setup_context(ctx, colorize):
+def setup_context(ctx, debug, colorize):
     """
         Ensure the user has a valid authorization
     """
@@ -63,5 +64,6 @@ def setup_context(ctx, colorize):
     ctx.obj = LagerContext(
         auth=auth,
         defaults=config['LAGER'],
+        debug=debug,
         style=click.style if colorize else lambda string, **kwargs: string,
     )

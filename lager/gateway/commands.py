@@ -152,8 +152,9 @@ class BinfileType(click.ParamType):
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
 @click.option('--force', is_flag=True)
 @click.option('--follow/--no-follow', default=False, help='Display job output')
+@click.option('--programmer', default='ftdi', help='Hardware to use for device flashing')
 def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, speed, erase,
-            baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, force, follow):
+            baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, force, follow, programmer):
     """
         Flash gateway
     """
@@ -182,6 +183,7 @@ def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, sp
     files.append(('device', device))
     files.append(('interface', interface))
     files.append(('speed', speed))
+    files.append(('programmer', programmer))
     serial_options = {
         'device': serial_device,
         'baudrate': baudrate,

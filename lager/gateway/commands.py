@@ -153,8 +153,15 @@ class BinfileType(click.ParamType):
 @click.option('--force', is_flag=True)
 @click.option('--follow/--no-follow', default=False, help='Display job output')
 @click.option('--programmer', default='ftdi', help='Hardware to use for device flashing')
+@click.option('--message-timeout', default=5*60,
+              help='Max time in seconds to wait between messages from API.'
+              'This timeout only affects reading output and does not cancel the actual test run if hit.')
+@click.option('--overall-timeout', default=30*60,
+              help='Cumulative time in seconds to wait for session output.'
+              'This timeout only affects reading output and does not cancel the actual test run if hit.')
 def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, speed, erase,
-            baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, force, follow, programmer):
+            baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, force, follow, programmer,
+            message_timeout, overall_timeout):
     """
         Flash gateway
     """
@@ -204,7 +211,7 @@ def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, sp
         job_id = test_run['test_run']['id']
         click.echo('Job id: {}'.format(job_id))
         connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
-        run_job_output(connection_params, ctx.obj.debug)
+        run_job_output(connection_params, message_timeout, overall_timeout, ctx.obj.debug)
     else:
         click.echo(test_run)
 

@@ -45,33 +45,43 @@ async def handle_message(message):
         return await handle_url_message(message['urls'])
     return None
 
-async def display_job_output(connection_params):
+class InterMessageTimeout(Exception):
+    pass
+
+async def display_job_output(connection_params, message_timeout, overall_timeout):
     """
         Display job output from websocket
     """
     (uri, kwargs) = connection_params
-    try:
-        async with websockets.connect(uri, close_timeout=1, **kwargs) as websocket:
+    async with websockets.connect(uri, close_timeout=1, **kwargs) as websocket:
+        while True:
             try:
-                async for message in websocket:
-                    await handle_message(bson.loads(message))
-            except requests.exceptions.HTTPError:
-                raise
-            except Exception as e:
-                for task in asyncio.all_tasks():
-                    task.cancel()
-                raise
-    except:
-        for task in asyncio.all_tasks():
-            task.cancel()
-        raise
+                try:
+                    message = await asyncio.wait_for(websocket.recv(), message_timeout)
+                except asyncio.TimeoutError:
+                    raise InterMessageTimeout(message_timeout)
+                await handle_message(bson.loads(message))
+            except websockets.exceptions.ConnectionClosedOK:
+                break
 
-def run_job_output(connection_params, debug=False):
+def run_job_output(connection_params, message_timeout, overall_timeout, debug=False):
     """
         Run async task to get job output from websocket
     """
     try:
-        asyncio.run(display_job_output(connection_params), debug=debug)
+        job_output_coro = display_job_output(connection_params, message_timeout, overall_timeout)
+        waiter = asyncio.wait_for(job_output_coro, overall_timeout)
+        asyncio.run(waiter, debug=debug)
+    except asyncio.TimeoutError:
+        suffix = '' if overall_timeout == 1 else 's'
+        message = f'Job status timed out after {overall_timeout} second{suffix}'
+        click.secho(message, fg='red', err=True)
+        click.get_current_context().exit(1)
+    except InterMessageTimeout:
+        suffix = '' if message_timeout == 1 else 's'
+        message = f'Timed out after no messages received for {message_timeout} second{suffix}'
+        click.secho(message, fg='red', err=True)
+        click.get_current_context().exit(1)
     except requests.exceptions.HTTPError as exc:
         response = getattr(exc, 'response')
         if response is not None and response.status_code == 404:
@@ -85,13 +95,18 @@ def run_job_output(connection_params, debug=False):
         if debug:
             raise
         click.get_current_context().exit(1)
+    except websockets.exceptions.ConnectionClosedError:
+        click.secho('API websocket closed abnormally', fg='red', err=True)
+        if debug:
+            raise
+        click.get_current_context().exit(1)
     except asyncio.CancelledError:
         click.secho('Unexpected disconnect from Lager API!', fg='red', err=True)
         if debug:
             raise
         click.get_current_context().exit(1)
     except ConnectionRefusedError:
-        click.secho('Could not connect to Lager API!', fg='red', err=True)
+        click.secho('Lager API websocket connection refused!', fg='red', err=True)
         if debug:
             raise
         click.get_current_context().exit(1)

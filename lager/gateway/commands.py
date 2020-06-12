@@ -164,7 +164,7 @@ class BinfileType(click.ParamType):
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
 @click.option('--force', is_flag=True)
 @click.option('--follow/--no-follow', default=False, help='Display job output')
-@click.option('--programmer', default='ftdi', help='Hardware to use for device flashing')
+@click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
 @click.option('--message-timeout', default=5*60,
               help='Max time in seconds to wait between messages from API.'
               'This timeout only affects reading output and does not cancel the actual test run if hit.')
@@ -172,7 +172,7 @@ class BinfileType(click.ParamType):
               help='Cumulative time in seconds to wait for session output.'
               'This timeout only affects reading output and does not cancel the actual test run if hit.')
 def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, speed, erase,
-            baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, force, follow, programmer,
+            baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, force, follow, debugger,
             message_timeout, overall_timeout):
     """
         Flash gateway
@@ -202,7 +202,7 @@ def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, sp
     files.append(('device', device))
     files.append(('interface', interface))
     files.append(('speed', speed))
-    files.append(('programmer', programmer))
+    files.append(('debugger', debugger))
     serial_options = {
         'device': serial_device,
         'baudrate': baudrate,

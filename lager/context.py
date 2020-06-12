@@ -5,7 +5,6 @@
 """
 import os
 import urllib.parse
-from contextlib import asynccontextmanager
 import urllib3
 import requests
 import click
@@ -26,7 +25,7 @@ class LagerSession(BaseUrlSession):
         """
         ctx = click.get_current_context()
         if r.status_code == 404:
-            name = ctx.params['name']
+            name = ctx.params['name'] or ctx.obj.default_gateway
             click.secho('You don\'t have a gateway with id `{}`'.format(name), fg='red', err=True)
             click.secho(
                 'Please double check your login credentials and gateway id',

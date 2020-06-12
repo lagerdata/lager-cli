@@ -13,6 +13,18 @@ from lager.status import run_job_output
 def _get_default_gateway(ctx):
     name = ctx.obj.default_gateway
     if name is None:
+        session = ctx.obj.session
+        url = 'gateway/list'
+        resp = session.get(url)
+        resp.raise_for_status()
+        gateways = resp.json()['gateways']
+
+        if not gateways:
+            click.secho('No gateways found! Please contact support@lagerdata.com', fg='red')
+            ctx.exit(1)
+        if len(gateways) == 1:
+            return gateways[0]['id']
+
         hint = 'NAME. Set a default using `lager set default gateway <id>`'
         raise click.MissingParameter(
             param=ctx.command.params[0],

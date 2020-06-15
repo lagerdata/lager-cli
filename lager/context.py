@@ -86,6 +86,7 @@ class LagerContext:  # pylint: disable=too-few-public-methods
         self.style = style
         self.ws_host = ws_host
         self.debug = debug
+        self.auth_token = auth['token']
 
     @property
     def default_gateway(self):

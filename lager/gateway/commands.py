@@ -303,3 +303,4 @@ def gdb_tunnel(ctx, name, snr, device, interface, speed, debugger):
         name = _get_default_gateway(ctx)
 
     session = ctx.obj.session
+    print(ctx.obj.auth_token)

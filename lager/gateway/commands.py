@@ -10,6 +10,7 @@ import os
 import functools
 import click
 import trio
+import trio_websocket
 from lager.status import run_job_output
 
 def _get_default_gateway(ctx):
@@ -286,18 +287,40 @@ def jobs(ctx, name):
     resp = session.get(url)
     print(resp.json())
 
-async def connection_handler(bridge_stream, gdb_client_stream):
-    # bridge_stream: read/write to bridge
-    # gdb_client_stream: read/write to gdb client
-    pass
+
+async def send_to_websocket(websocket, gdb_client_stream, nursery):
+    try:
+        async for msg in gdb_client_stream:
+            await websocket.send_message(msg)
+    finally:
+        nursery.cancel_scope.cancel()
 
 
-async def serve_tunnel(host, port):
-    # TODO: establish connection to bridge and pass it to handler
-    bridge_stream = 42
-    handler = functools.partial(connection_handler, bridge_stream)
-    click.echo(f'Serving GDB on {host}:{port}')
-    await trio.serve_tcp(handler, port, host=host)
+async def send_to_gdb(websocket, gdb_client_stream, nursery):
+    while True:
+        try:
+            msg = await websocket.get_message()
+            await gdb_client_stream.send_all(msg)
+        except trio_websocket.ConnectionClosed:
+            nursery.cancel_scope.cancel()
+
+async def connection_handler(websocket, gdb_client_stream):
+    async with trio.open_nursery() as nursery:
+        nursery.start_soon(send_to_websocket, websocket, gdb_client_stream, nursery)
+        nursery.start_soon(send_to_gdb, websocket, gdb_client_stream, nursery)
+
+
+async def serve_tunnel(host, port, connection_params, *, task_status=trio.TASK_STATUS_IGNORED):
+    (uri, kwargs) = connection_params
+    async with trio.open_nursery() as nursery:
+        async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
+            handler = functools.partial(connection_handler, websocket)
+            serve_listeners = functools.partial(trio.serve_tcp,
+                handler, port, host=host)
+            server = await nursery.start(serve_listeners)
+            task_status.started(server)
+            click.echo(f'Serving GDB on {host}:{port}')
+            await trio.sleep_forever()
 
 @gateway.command()
 @click.pass_context
@@ -320,4 +343,5 @@ def gdb_tunnel(ctx, name, snr, device, interface, speed, debugger, host, port):
 
     session = ctx.obj.session
     ctx.obj.auth_token
-    trio.run(serve_tunnel, host, port)
+    connection_params = ctx.obj.websocket_connection_params(socktype='gdb-tunnel', gateway_id=name)
+    trio.run(serve_tunnel, host, port, connection_params)

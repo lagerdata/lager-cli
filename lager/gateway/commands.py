@@ -283,3 +283,23 @@ def jobs(ctx, name):
     url = 'gateway/{}/jobs'.format(name)
     resp = session.get(url)
     print(resp.json())
+
+
+@gateway.command()
+@click.pass_context
+@click.argument('name', required=False)
+@click.option(
+    '--snr',
+    help='Serial number of device to debug. Required if multiple DUTs connected to gateway')
+@click.option('--device', help='Target device type', required=True)
+@click.option('--interface', help='Target interface', required=True)
+@click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
+@click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
+def gdb_tunnel(ctx, name, snr, device, interface, speed, debugger):
+    """
+        GDB tunnel to gateway
+    """
+    if name is None:
+        name = _get_default_gateway(ctx)
+
+    session = ctx.obj.session

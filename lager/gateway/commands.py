@@ -7,7 +7,9 @@ import itertools
 import json
 import collections
 import os
+import functools
 import click
+import trio
 from lager.status import run_job_output
 
 def _get_default_gateway(ctx):
@@ -284,6 +286,18 @@ def jobs(ctx, name):
     resp = session.get(url)
     print(resp.json())
 
+async def connection_handler(bridge_stream, gdb_client_stream):
+    # bridge_stream: read/write to bridge
+    # gdb_client_stream: read/write to gdb client
+    pass
+
+
+async def serve_tunnel(host, port):
+    # TODO: establish connection to bridge and pass it to handler
+    bridge_stream = 42
+    handler = functools.partial(connection_handler, bridge_stream)
+    click.echo(f'Serving GDB on {host}:{port}')
+    await trio.serve_tcp(handler, port, host=host)
 
 @gateway.command()
 @click.pass_context
@@ -295,7 +309,9 @@ def jobs(ctx, name):
 @click.option('--interface', help='Target interface', required=True)
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
 @click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
-def gdb_tunnel(ctx, name, snr, device, interface, speed, debugger):
+@click.option('--host', default='localhost', help='Host bind for gdb tunnel')
+@click.option('--port', default=2159, help='Port for gdb tunnel')
+def gdb_tunnel(ctx, name, snr, device, interface, speed, debugger, host, port):
     """
         GDB tunnel to gateway
     """
@@ -303,4 +319,5 @@ def gdb_tunnel(ctx, name, snr, device, interface, speed, debugger):
         name = _get_default_gateway(ctx)
 
     session = ctx.obj.session
-    print(ctx.obj.auth_token)
+    ctx.obj.auth_token
+    trio.run(serve_tunnel, host, port)

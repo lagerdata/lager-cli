@@ -65,7 +65,12 @@ async def display_job_output(connection_params, message_timeout, overall_timeout
             while True:
                 try:
                     with trio.fail_after(message_timeout):
-                        message = await websocket.get_message()
+                        try:
+                            message = await websocket.get_message()
+                        except trio_websocket.ConnectionClosed as exc:
+                            if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
+                                raise
+                            break
                 except trio.TooSlowError:
                     raise InterMessageTimeout(message_timeout)
                 await handle_message(bson.loads(message))

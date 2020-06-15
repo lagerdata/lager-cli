@@ -4,8 +4,9 @@
 import sys
 import os
 import contextlib
-from socket import AddressFamily  # pylint: disable=no-name-in-module
-import websockets
+import functools
+import trio
+import trio_websocket
 import requests_mock
 import bson
 import pytest
@@ -26,11 +27,14 @@ def make_server():
     """
     @contextlib.asynccontextmanager
     async def server_fn(handler):
-        async with websockets.serve(handler, "localhost", 0) as srv:
-            for sock in srv.sockets:
-                if sock.family == AddressFamily.AF_INET:
-                    (host, port) = sock.getsockname()
-                    yield f'ws://{host}:{port}'
+        async with trio.open_nursery() as nursery:
+            server_fn = functools.partial(trio_websocket.serve_websocket, handler, 'localhost', 0, ssl_context=None)
+            server = await nursery.start(server_fn)
+            for listener in server.listeners:
+                if '::' not in listener.url:
+                    yield listener.url
+            nursery.cancel_scope.cancel()
+
     return server_fn
 
 @pytest.fixture
@@ -56,11 +60,13 @@ def data_server(streaming_data):
         Returns a coroutine function that is a websocket handler for serving
         `streaming_data`
     """
-    async def handler_fn(websocket, path):
+    async def handler_fn(request):
+        websocket = await request.accept()
         message = bson.dumps({
             'data': streaming_data,
         })
-        await websocket.send(message)
+        await websocket.send_message(message)
+        await websocket.aclose(reason='EOF')
     return handler_fn
 
 @pytest.fixture
@@ -84,9 +90,11 @@ def download_server(download_urls):
         Returns a coroutine function that is a websocket handler for serving
         `urls`
     """
-    async def handler_fn(websocket, path):
+    async def handler_fn(request):
+        websocket = await request.accept()
         message = bson.dumps({
             'urls': download_urls,
         })
-        await websocket.send(message)
+        await websocket.send_message(message)
+        await websocket.aclose(reason='EOF')
     return handler_fn

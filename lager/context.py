@@ -9,7 +9,7 @@ import urllib3
 import requests
 import click
 from requests_toolbelt.sessions import BaseUrlSession
-import websockets
+
 _DEFAULT_HOST = 'https://lagerdata.com'
 _DEFAULT_WEBSOCKET_HOST = 'wss://ws.lagerdata.com'
 
@@ -105,8 +105,8 @@ class LagerContext:  # pylint: disable=too-few-public-methods
             raise ValueError(f'Invalid websocket type: {socktype}')
         uri = urllib.parse.urljoin(self.ws_host, path)
 
-        headers = {
-            'Authorization': self.session.headers['Authorization'],
-        }
+        headers = [
+            (b'authorization', self.session.headers['Authorization'].encode()),
+        ]
 
         return (uri, dict(extra_headers=headers))

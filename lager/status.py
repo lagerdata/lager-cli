@@ -3,14 +3,19 @@
 
     Job status output functions
 """
-import asyncio
 from functools import partial
 import bson
 import click
-import websockets
+import trio
+import trio_websocket
+from trio_websocket import open_websocket_url
+import wsproto.frame_protocol as wsframeproto
 import requests
 
 def stream_response(response):
+    """
+        Stream a ``requests`` response to the terminal
+    """
     with response:
         for chunk in response.iter_content(chunk_size=None):
             click.echo(chunk, nl=False)
@@ -19,12 +24,11 @@ async def handle_url_message(urls):
     """
         Handle a message with data location urls
     """
-    loop = asyncio.get_running_loop()
     downloader = partial(requests.get, stream=True)
     for url in urls:
-        response = await loop.run_in_executor(None, downloader, url)
+        response = await trio.to_thread.run_sync(downloader, url)
         response.raise_for_status()
-        await loop.run_in_executor(None, stream_response, response)
+        await trio.to_thread.run_sync(stream_response, response)
 
 async def handle_data_message(message):
     """
@@ -46,6 +50,9 @@ async def handle_message(message):
     return None
 
 class InterMessageTimeout(Exception):
+    """
+        Raised if no messages received for ``message_timeout`` seconds
+    """
     pass
 
 async def display_job_output(connection_params, message_timeout, overall_timeout):
@@ -53,26 +60,23 @@ async def display_job_output(connection_params, message_timeout, overall_timeout
         Display job output from websocket
     """
     (uri, kwargs) = connection_params
-    async with websockets.connect(uri, close_timeout=1, **kwargs) as websocket:
-        while True:
-            try:
+    with trio.fail_after(overall_timeout):
+        async with open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
+            while True:
                 try:
-                    message = await asyncio.wait_for(websocket.recv(), message_timeout)
-                except asyncio.TimeoutError:
+                    with trio.fail_after(message_timeout):
+                        message = await websocket.get_message()
+                except trio.TooSlowError:
                     raise InterMessageTimeout(message_timeout)
                 await handle_message(bson.loads(message))
-            except websockets.exceptions.ConnectionClosedOK:
-                break
 
 def run_job_output(connection_params, message_timeout, overall_timeout, debug=False):
     """
         Run async task to get job output from websocket
     """
     try:
-        job_output_coro = display_job_output(connection_params, message_timeout, overall_timeout)
-        waiter = asyncio.wait_for(job_output_coro, overall_timeout)
-        asyncio.run(waiter, debug=debug)
-    except asyncio.TimeoutError:
+        trio.run(display_job_output, connection_params, message_timeout, overall_timeout)
+    except trio.TooSlowError:
         suffix = '' if overall_timeout == 1 else 's'
         message = f'Job status timed out after {overall_timeout} second{suffix}'
         click.secho(message, fg='red', err=True)
@@ -90,27 +94,31 @@ def run_job_output(connection_params, message_timeout, overall_timeout, debug=Fa
             click.secho('Error retrieving test run content', fg='red', err=True)
         if debug:
             raise
-    except websockets.exceptions.InvalidMessage:
-        click.secho('Could not connect to API websocket', fg='red', err=True)
+    except trio_websocket.HandshakeError as exc:
+        if exc.status_code == 404:
+            click.secho('Job not found', fg='red', err=True)
+        else:
+            click.secho('Could not connect to API websocket', fg='red', err=True)
         if debug:
             raise
         click.get_current_context().exit(1)
-    except websockets.exceptions.ConnectionClosedError:
-        click.secho('API websocket closed abnormally', fg='red', err=True)
-        if debug:
-            raise
-        click.get_current_context().exit(1)
-    except asyncio.CancelledError:
-        click.secho('Unexpected disconnect from Lager API!', fg='red', err=True)
-        if debug:
-            raise
-        click.get_current_context().exit(1)
+    except trio_websocket.ConnectionClosed as exc:
+        if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE:
+            click.secho('API websocket closed abnormally', fg='red', err=True)
+            if debug:
+                raise
+            click.get_current_context().exit(1)
+        elif exc.reason.reason != 'EOF':
+            click.secho('API websocket closed unexpectedly', fg='red', err=True)
+            if debug:
+                raise
+            click.get_current_context().exit(1)
     except ConnectionRefusedError:
         click.secho('Lager API websocket connection refused!', fg='red', err=True)
         if debug:
             raise
         click.get_current_context().exit(1)
-    except websockets.exceptions.InvalidStatusCode as exc:
+    except trio_websocket.ConnectionRejected as exc:
         if exc.status_code == 404:
             click.secho('Job not found', fg='red', err=True)
         elif exc.status_code >= 500:

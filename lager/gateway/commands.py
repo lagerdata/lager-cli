@@ -289,14 +289,23 @@ def jobs(ctx, name):
 
 
 async def send_to_websocket(websocket, gdb_client_stream, nursery):
+    """
+        Read data from gdb_client_stream (a trio stream connected to a gdb client)
+        and send to websocket (ultimate destination is gateway gdbserver).
+    """
     try:
-        async for msg in gdb_client_stream:
-            await websocket.send_message(msg)
+        async with gdb_client_stream:
+            async for msg in gdb_client_stream:
+                await websocket.send_message(msg)
     finally:
         nursery.cancel_scope.cancel()
 
 
 async def send_to_gdb(websocket, gdb_client_stream, nursery):
+    """
+        Read data from websocket (originating from gateway gdbserver)
+        and send to gdb_client_stream (a trio stream connected to a gdb client)
+    """
     while True:
         try:
             msg = await websocket.get_message()
@@ -304,23 +313,37 @@ async def send_to_gdb(websocket, gdb_client_stream, nursery):
         except trio_websocket.ConnectionClosed:
             nursery.cancel_scope.cancel()
 
-async def connection_handler(websocket, gdb_client_stream):
-    async with trio.open_nursery() as nursery:
-        nursery.start_soon(send_to_websocket, websocket, gdb_client_stream, nursery)
-        nursery.start_soon(send_to_gdb, websocket, gdb_client_stream, nursery)
+async def connection_handler(connection_params, gdb_client_stream):
+    """
+        Handle a single connection from a gdb client
+    """
+    (uri, kwargs) = connection_params
+    async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
+        async with trio.open_nursery() as nursery:
+            nursery.start_soon(send_to_websocket, websocket, gdb_client_stream, nursery)
+            nursery.start_soon(send_to_gdb, websocket, gdb_client_stream, nursery)
 
 
 async def serve_tunnel(host, port, connection_params, *, task_status=trio.TASK_STATUS_IGNORED):
+    """
+        Start up the server that tunnels traffic to a gdbserver instance running on a gateway
+    """
     (uri, kwargs) = connection_params
     async with trio.open_nursery() as nursery:
-        async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
-            handler = functools.partial(connection_handler, websocket)
-            serve_listeners = functools.partial(trio.serve_tcp,
-                handler, port, host=host)
-            server = await nursery.start(serve_listeners)
-            task_status.started(server)
-            click.echo(f'Serving GDB on {host}:{port}')
+        async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs):
+            # Make an initial connection to ensure auth info is correct
+            pass
+
+        handler = functools.partial(connection_handler, connection_params)
+        serve_listeners = functools.partial(trio.serve_tcp, handler, port, host=host)
+
+        server = await nursery.start(serve_listeners)
+        task_status.started(server)
+        click.echo(f'Serving GDB on {host}:{port}. Press Ctrl+C to quit.')
+        try:
             await trio.sleep_forever()
+        except KeyboardInterrupt:
+            nursery.cancel_scope.cancel()
 
 @gateway.command()
 @click.pass_context
@@ -341,7 +364,18 @@ def gdb_tunnel(ctx, name, snr, device, interface, speed, debugger, host, port):
     if name is None:
         name = _get_default_gateway(ctx)
 
-    session = ctx.obj.session
-    ctx.obj.auth_token
     connection_params = ctx.obj.websocket_connection_params(socktype='gdb-tunnel', gateway_id=name)
-    trio.run(serve_tunnel, host, port, connection_params)
+    try:
+        trio.run(serve_tunnel, host, port, connection_params)
+    except PermissionError as exc:
+        if port < 1024:
+            click.secho(f'Permission denied for port {port}. Using a port number less than '
+                        '1024 typically requires root privileges.', fg='red', err=True)
+        else:
+            click.secho(str(exc), fg='red', err=True)
+        if ctx.obj.debug:
+            raise
+    except OSError as exc:
+        click.secho(f'Could not start gdb-tunnel on port {port}: {exc}', fg='red', err=True)
+        if ctx.obj.debug:
+            raise

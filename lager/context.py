@@ -95,6 +95,10 @@ class LagerContext:  # pylint: disable=too-few-public-methods
         """
         return self.defaults.get('gateway_id')
 
+    @default_gateway.setter
+    def default_gateway(self, gateway_id):
+        self.defaults['gateway_id'] = str(gateway_id)
+
     def websocket_connection_params(self, socktype, **kwargs):
         """
             Yields a websocket connection to the given path

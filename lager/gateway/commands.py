@@ -26,6 +26,7 @@ def _get_default_gateway(ctx):
             click.secho('No gateways found! Please contact support@lagerdata.com', fg='red')
             ctx.exit(1)
         if len(gateways) == 1:
+            ctx.obj.default_gateway = gateways[0]['id']
             return gateways[0]['id']
 
         hint = 'NAME. Set a default using `lager set default gateway <id>`'
@@ -138,6 +139,46 @@ class BinfileType(click.ParamType):
 
     def __repr__(self):
         return 'BINFILE'
+
+@gateway.command()
+@click.pass_context
+@click.argument('name', required=False)
+@click.option(
+    '--snr',
+    help='Serial number of device to flash. Required if multiple DUTs connected to gateway')
+@click.option('--device', help='Target device type', required=True)
+@click.option('--interface', help='Target interface', required=True)
+@click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
+@click.option('--force', is_flag=True)
+@click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
+@click.option('--message-timeout', default=5*60,
+              help='Max time in seconds to wait between messages from API.'
+              'This timeout only affects reading output and does not cancel the actual test run if hit.')
+@click.option('--overall-timeout', default=30*60,
+              help='Cumulative time in seconds to wait for session output.'
+              'This timeout only affects reading output and does not cancel the actual test run if hit.')
+def erase(ctx, name, snr, device, interface, speed, force, debugger, message_timeout, overall_timeout):
+    if name is None:
+        name = _get_default_gateway(ctx)
+
+    session = ctx.obj.session
+    url = 'gateway/{}/erase-duck'.format(name)
+    files = []
+    if snr:
+        files.append(('snr', snr))
+    files.append(('device', device))
+    files.append(('interface', interface))
+    files.append(('speed', speed))
+    files.append(('debugger', debugger))
+    if force:
+        files.append(('force', '1'))
+
+    resp = session.post(url, files=files, stream=True)
+    test_run = resp.json()
+    job_id = test_run['test_run']['id']
+    click.echo('Job id: {}'.format(job_id))
+    connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
+    run_job_output(connection_params, message_timeout, overall_timeout, ctx.obj.debug)
 
 @gateway.command()
 @click.pass_context

@@ -50,9 +50,9 @@ async def serve_tunnel(host, port, connection_params, *, task_status=trio.TASK_S
     """
     (uri, kwargs) = connection_params
     async with trio.open_nursery() as nursery:
-        async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs):
-            # Make an initial connection to ensure auth info is correct
-            pass
+        # async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs):
+        #     # Make an initial connection to ensure auth info is correct
+        #     pass
 
         handler = functools.partial(connection_handler, connection_params)
         serve_listeners = functools.partial(trio.serve_tcp, handler, port, host=host)

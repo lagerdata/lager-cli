@@ -38,17 +38,23 @@ async def connection_handler(connection_params, gdb_client_stream):
         Handle a single connection from a gdb client
     """
     (uri, kwargs) = connection_params
-    async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
-        async with trio.open_nursery() as nursery:
-            nursery.start_soon(send_to_websocket, websocket, gdb_client_stream, nursery)
-            nursery.start_soon(send_to_gdb, websocket, gdb_client_stream, nursery)
+    sockname = gdb_client_stream.socket.getsockname()
+    click.echo(f'Serving gdb client: {sockname}')
+    try:
+        async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
+            async with trio.open_nursery() as nursery:
+                nursery.start_soon(send_to_websocket, websocket, gdb_client_stream, nursery)
+                nursery.start_soon(send_to_gdb, websocket, gdb_client_stream, nursery)
+    finally:
+        click.echo(f'gdb client disconnected: {sockname}')
+
 
 
 async def serve_tunnel(host, port, connection_params, *, task_status=trio.TASK_STATUS_IGNORED):
     """
         Start up the server that tunnels traffic to a gdbserver instance running on a gateway
     """
-    (uri, kwargs) = connection_params
+    # (uri, kwargs) = connection_params
     async with trio.open_nursery() as nursery:
         # async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs):
         #     # Make an initial connection to ensure auth info is correct

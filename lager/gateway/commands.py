@@ -338,14 +338,30 @@ def jobs(ctx, name):
 @click.option('--interface', help='Target interface', required=True)
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
 @click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
-@click.option('--host', default='localhost', help='Hostname binding for gdbserver')
+@click.option('--host', default='localhost', help='interface for gdbserver to bind. '
+              'Use --host \'*\' to bind to all interfaces.')
 @click.option('--port', default=2159, help='Port for gdbserver')
 def gdbserver(ctx, name, snr, device, interface, speed, debugger, host, port):
     """
-        GDB server on gateway
+        Run GDB server on gateway. By default binds to localhost, meaning gdb client connections
+        must originate from the machine running `lager gdbserver`. If you would like to bind to
+        all interfaces, use --host '*'
     """
     if name is None:
         name = _get_default_gateway(ctx)
+
+    # Step one, try to start gdb on gateway
+    session = ctx.obj.session
+    url = 'gateway/{}/start-debugger'.format(name)
+    files = []
+    if snr:
+        files.append(('snr', snr))
+    files.append(('device', device))
+    files.append(('interface', interface))
+    files.append(('speed', speed))
+    files.append(('debugger', debugger))
+
+    resp = session.post(url, files=files)
 
     connection_params = ctx.obj.websocket_connection_params(socktype='gdb-tunnel', gateway_id=name)
     try:

@@ -338,11 +338,11 @@ def jobs(ctx, name):
 @click.option('--interface', help='Target interface', required=True)
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
 @click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
-@click.option('--host', default='localhost', help='Host bind for gdb tunnel')
-@click.option('--port', default=2159, help='Port for gdb tunnel')
-def gdb_tunnel(ctx, name, snr, device, interface, speed, debugger, host, port):
+@click.option('--host', default='localhost', help='Hostname binding for gdbserver')
+@click.option('--port', default=2159, help='Port for gdbserver')
+def gdbserver(ctx, name, snr, device, interface, speed, debugger, host, port):
     """
-        GDB tunnel to gateway
+        GDB server on gateway
     """
     if name is None:
         name = _get_default_gateway(ctx)
@@ -359,6 +359,6 @@ def gdb_tunnel(ctx, name, snr, device, interface, speed, debugger, host, port):
         if ctx.obj.debug:
             raise
     except OSError as exc:
-        click.secho(f'Could not start gdb-tunnel on port {port}: {exc}', fg='red', err=True)
+        click.secho(f'Could not start gdbserver on port {port}: {exc}', fg='red', err=True)
         if ctx.obj.debug:
             raise

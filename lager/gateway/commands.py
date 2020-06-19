@@ -378,3 +378,6 @@ def gdbserver(ctx, name, snr, device, interface, speed, debugger, host, port):
         click.secho(f'Could not start gdbserver on port {port}: {exc}', fg='red', err=True)
         if ctx.obj.debug:
             raise
+    finally:
+        url = 'gateway/{}/stop-debugger'.format(name)
+        resp = session.post(url, files=[('debugger', debugger)])

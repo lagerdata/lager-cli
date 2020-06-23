@@ -335,13 +335,14 @@ def jobs(ctx, name):
     '--snr',
     help='Serial number of device to debug. Required if multiple DUTs connected to gateway')
 @click.option('--device', help='Target device type', required=True)
-@click.option('--interface', help='Target interface', required=True)
+@click.option('--interface', help='Target interface', type=click.Choice(['ftdi', 'jlink']), default='ftdi')
+@click.option('--transport', help='Target transport', type=click.Choice(['swd', 'jtag']), default='swd')
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
 @click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
 @click.option('--host', default='localhost', help='interface for gdbserver to bind. '
               'Use --host \'*\' to bind to all interfaces.')
 @click.option('--port', default=2159, help='Port for gdbserver')
-def gdbserver(ctx, name, snr, device, interface, speed, debugger, host, port):
+def gdbserver(ctx, name, snr, device, interface, transport, speed, debugger, host, port):
     """
         Run GDB server on gateway. By default binds to localhost, meaning gdb client connections
         must originate from the machine running `lager gdbserver`. If you would like to bind to
@@ -358,6 +359,7 @@ def gdbserver(ctx, name, snr, device, interface, speed, debugger, host, port):
         files.append(('snr', snr))
     files.append(('device', device))
     files.append(('interface', interface))
+    files.append(('transport', transport))
     files.append(('speed', speed))
     files.append(('debugger', debugger))
 
@@ -381,3 +383,24 @@ def gdbserver(ctx, name, snr, device, interface, speed, debugger, host, port):
     finally:
         url = 'gateway/{}/stop-debugger'.format(name)
         resp = session.post(url, files=[('debugger', debugger)])
+
+
+@gateway.command()
+@click.pass_context
+@click.argument('name', required=False)
+@click.option(
+    '--snr',
+    help='Serial number of device to connect. Required if multiple DUTs connected to gateway')
+@click.option('--device', help='Target device type', required=True)
+@click.option('--interface', help='Target interface', required=True)
+@click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
+@click.option('--force', is_flag=True)
+@click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
+@click.option('--message-timeout', default=5*60,
+              help='Max time in seconds to wait between messages from API.'
+              'This timeout only affects reading output and does not cancel the actual test run if hit.')
+@click.option('--overall-timeout', default=30*60,
+              help='Cumulative time in seconds to wait for session output.'
+              'This timeout only affects reading output and does not cancel the actual test run if hit.')
+def connect(ctx, name, snr, device, interface, speed, force, debugger, message_timeout, overall_timeout):
+    print('connect')

@@ -5,6 +5,7 @@
 """
 import click
 from texttable import Texttable
+from lager import SUPPORTED_DEVICES
 
 @click.group(name='list')
 def lister():
@@ -35,3 +36,11 @@ def gateways(ctx):
     for gateway in resp.json()['gateways']:
         table.add_row([gateway['name'], gateway['id']])
     print(table.draw())
+
+@lister.command()
+def supported_devices():
+    """
+        List supported devices
+    """
+    for device in SUPPORTED_DEVICES:
+        click.echo(device)

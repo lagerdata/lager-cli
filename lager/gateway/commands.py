@@ -10,6 +10,7 @@ import os
 import click
 import trio
 import trio_websocket
+from lager import SUPPORTED_DEVICES
 from lager.status import run_job_output
 from lager.gateway.tunnel import serve_tunnel
 
@@ -391,16 +392,31 @@ def gdbserver(ctx, name, snr, device, interface, transport, speed, debugger, hos
 @click.option(
     '--snr',
     help='Serial number of device to connect. Required if multiple DUTs connected to gateway')
-@click.option('--device', help='Target device type', required=True)
-@click.option('--interface', help='Target interface', required=True)
+@click.option('--device', help='Target device type', type=click.Choice(SUPPORTED_DEVICES), required=True)
+@click.option('--interface', help='Target interface', type=click.Choice(['ftdi', 'jlink']), default='ftdi')
+@click.option('--transport', help='Target transport', type=click.Choice(['swd', 'jtag']), default='swd')
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
 @click.option('--force', is_flag=True)
 @click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
-@click.option('--message-timeout', default=5*60,
-              help='Max time in seconds to wait between messages from API.'
-              'This timeout only affects reading output and does not cancel the actual test run if hit.')
-@click.option('--overall-timeout', default=30*60,
-              help='Cumulative time in seconds to wait for session output.'
-              'This timeout only affects reading output and does not cancel the actual test run if hit.')
-def connect(ctx, name, snr, device, interface, speed, force, debugger, message_timeout, overall_timeout):
-    print('connect')
+def connect(ctx, name, snr, device, interface, transport, speed, force, debugger):
+    """
+        Connect your gateway to your DUCK.
+    """
+    if name is None:
+        name = _get_default_gateway(ctx)
+
+    # Step one, try to start gdb on gateway
+    session = ctx.obj.session
+    url = 'gateway/{}/start-debugger'.format(name)
+    files = []
+    if snr:
+        files.append(('snr', snr))
+    files.append(('device', device))
+    files.append(('interface', interface))
+    files.append(('transport', transport))
+    files.append(('speed', speed))
+    files.append(('debugger', debugger))
+    files.append(('force', force))
+
+    resp = session.post(url, files=files)
+    print(resp.json())

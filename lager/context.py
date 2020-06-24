@@ -4,6 +4,7 @@
     CLI context management
 """
 import os
+import json
 import urllib.parse
 import urllib3
 import requests
@@ -12,6 +13,20 @@ from requests_toolbelt.sessions import BaseUrlSession
 
 _DEFAULT_HOST = 'https://lagerdata.com'
 _DEFAULT_WEBSOCKET_HOST = 'wss://ws.lagerdata.com'
+
+def print_openocd_error(error):
+    """
+        Parse an openocd log file and print the error lines
+    """
+    parsed = json.loads(error)
+    logfile = parsed['logfile']
+    for line in logfile.splitlines():
+        if line.startswith('Error: '):
+            click.secho(line, fg='red', err=True)
+
+OPENOCD_ERROR_CODES = set((
+    'openocd_start_failed',
+))
 
 class LagerSession(BaseUrlSession):
     """
@@ -35,7 +50,10 @@ class LagerSession(BaseUrlSession):
             ctx.exit(1)
         if r.status_code == 422:
             error = r.json()['error']
-            click.secho(error['description'], fg='red', err=True)
+            if error['code'] in OPENOCD_ERROR_CODES:
+                print_openocd_error(error['description'])
+            else:
+                click.secho(error['description'], fg='red', err=True)
             ctx.exit(1)
         if r.status_code >= 500:
             click.secho('Something went wrong with the Lager API', fg='red', err=True)

@@ -419,4 +419,24 @@ def connect(ctx, name, snr, device, interface, transport, speed, force, debugger
     files.append(('force', force))
 
     resp = session.post(url, files=files)
+
+
+@gateway.command()
+@click.pass_context
+@click.argument('name', required=False)
+@click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
+def disconnect(ctx, name, debugger):
+    """
+        Disconnect your gateway from your DUCK.
+    """
+    if name is None:
+        name = _get_default_gateway(ctx)
+
+    # stop debubber
+    session = ctx.obj.session
+    url = 'gateway/{}/stop-debugger'.format(name)
+    files = []
+    files.append(('debugger', debugger))
+
+    resp = session.post(url, files=files)
     print(resp.json())

@@ -144,37 +144,21 @@ class BinfileType(click.ParamType):
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
-@click.option(
-    '--snr',
-    help='Serial number of device to flash. Required if multiple DUTs connected to gateway')
-@click.option('--device', help='Target device type', required=True)
-@click.option('--interface', help='Target interface', required=True)
-@click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
-@click.option('--force', is_flag=True)
-@click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
 @click.option('--message-timeout', default=5*60,
               help='Max time in seconds to wait between messages from API.'
               'This timeout only affects reading output and does not cancel the actual test run if hit.')
 @click.option('--overall-timeout', default=30*60,
               help='Cumulative time in seconds to wait for session output.'
               'This timeout only affects reading output and does not cancel the actual test run if hit.')
-def erase(ctx, name, snr, device, interface, speed, force, debugger, message_timeout, overall_timeout):
+def erase(ctx, name, message_timeout, overall_timeout):
     if name is None:
         name = _get_default_gateway(ctx)
 
+    ensure_running(name, ctx)
+
     session = ctx.obj.session
     url = 'gateway/{}/erase-duck'.format(name)
-    files = []
-    if snr:
-        files.append(('snr', snr))
-    files.append(('device', device))
-    files.append(('interface', interface))
-    files.append(('speed', speed))
-    files.append(('debugger', debugger))
-    if force:
-        files.append(('force', '1'))
-
-    resp = session.post(url, files=files, stream=True)
+    resp = session.post(url, stream=True)
     test_run = resp.json()
     job_id = test_run['test_run']['id']
     click.echo('Job id: {}'.format(job_id))
@@ -329,6 +313,14 @@ def jobs(ctx, name):
     resp = session.get(url)
     print(resp.json())
 
+def ensure_running(name, ctx):
+    session = ctx.obj.session
+    url = 'gateway/{}/status'.format(name)
+    gateway_status = session.get(url).json()
+    if not gateway_status['running']:
+        click.secho('Gateway debugger is not running. Please use `lager connect` to run it', fg='red', err=True)
+        ctx.exit(1)
+
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
@@ -343,6 +335,8 @@ def gdbserver(ctx, name, host, port):
     """
     if name is None:
         name = _get_default_gateway(ctx)
+
+    ensure_running(name, ctx)
 
     connection_params = ctx.obj.websocket_connection_params(socktype='gdb-tunnel', gateway_id=name)
     try:
@@ -392,8 +386,8 @@ def connect(ctx, name, snr, device, interface, transport, speed, force, debugger
     files.append(('debugger', debugger))
     files.append(('force', force))
 
-    resp = session.post(url, files=files)
-    print(resp.json())
+    session.post(url, files=files)
+    click.secho('Connected!', fg='green')
 
 
 @gateway.command()
@@ -414,6 +408,7 @@ def disconnect(ctx, name, debugger):
     files.append(('debugger', debugger))
 
     session.post(url, files=files)
+    click.secho('Disconnected!', fg='green')
 
 @gateway.command()
 @click.pass_context

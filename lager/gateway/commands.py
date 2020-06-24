@@ -332,18 +332,10 @@ def jobs(ctx, name):
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
-@click.option(
-    '--snr',
-    help='Serial number of device to debug. Required if multiple DUTs connected to gateway')
-@click.option('--device', help='Target device type', required=True)
-@click.option('--interface', help='Target interface', type=click.Choice(['ftdi', 'jlink']), default='ftdi')
-@click.option('--transport', help='Target transport', type=click.Choice(['swd', 'jtag']), default='swd')
-@click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
-@click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
 @click.option('--host', default='localhost', help='interface for gdbserver to bind. '
               'Use --host \'*\' to bind to all interfaces.')
 @click.option('--port', default=2159, help='Port for gdbserver')
-def gdbserver(ctx, name, snr, device, interface, transport, speed, debugger, host, port):
+def gdbserver(ctx, name, host, port):
     """
         Run GDB server on gateway. By default binds to localhost, meaning gdb client connections
         must originate from the machine running `lager gdbserver`. If you would like to bind to
@@ -351,20 +343,6 @@ def gdbserver(ctx, name, snr, device, interface, transport, speed, debugger, hos
     """
     if name is None:
         name = _get_default_gateway(ctx)
-
-    # Step one, try to start gdb on gateway
-    session = ctx.obj.session
-    url = 'gateway/{}/start-debugger'.format(name)
-    files = []
-    if snr:
-        files.append(('snr', snr))
-    files.append(('device', device))
-    files.append(('interface', interface))
-    files.append(('transport', transport))
-    files.append(('speed', speed))
-    files.append(('debugger', debugger))
-
-    resp = session.post(url, files=files)
 
     connection_params = ctx.obj.websocket_connection_params(socktype='gdb-tunnel', gateway_id=name)
     try:
@@ -381,10 +359,6 @@ def gdbserver(ctx, name, snr, device, interface, transport, speed, debugger, hos
         click.secho(f'Could not start gdbserver on port {port}: {exc}', fg='red', err=True)
         if ctx.obj.debug:
             raise
-    finally:
-        url = 'gateway/{}/stop-debugger'.format(name)
-        resp = session.post(url, files=[('debugger', debugger)])
-
 
 @gateway.command()
 @click.pass_context

@@ -419,6 +419,7 @@ def connect(ctx, name, snr, device, interface, transport, speed, force, debugger
     files.append(('force', force))
 
     resp = session.post(url, files=files)
+    print(resp.json())
 
 
 @gateway.command()
@@ -438,5 +439,38 @@ def disconnect(ctx, name, debugger):
     files = []
     files.append(('debugger', debugger))
 
-    resp = session.post(url, files=files)
-    print(resp.json())
+    session.post(url, files=files)
+
+@gateway.command()
+@click.pass_context
+@click.argument('name', required=False)
+def status(ctx, name):
+    """
+        Disconnect your gateway from your DUCK.
+    """
+    if name is None:
+        name = _get_default_gateway(ctx)
+
+    # stop debubber
+    session = ctx.obj.session
+    url = 'gateway/{}/status'.format(name)
+
+    response = session.get(url).json()
+    running = response['running']
+    cmdline = response['cmdline']
+    logfile = response['logfile']
+    click.echo(f'Debugger running: {running}')
+    if cmdline:
+        click.echo('---- Debugger config ----')
+        config = cmdline[3:-1]
+        for i in range(0, len(config), 2):
+            chunk = config[i:i+2]
+            if chunk[0] == '-f':
+                parts = chunk[1].split('/')
+                click.echo(f'{parts[0]}: {parts[-1].rstrip(".cfg")}')
+            elif chunk[0] == '-c':
+                click.echo(chunk[1])
+
+    if logfile:
+        click.echo('---- Logs ----')
+        click.echo(logfile)

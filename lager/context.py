@@ -18,8 +18,12 @@ def print_openocd_error(error):
     """
         Parse an openocd log file and print the error lines
     """
+    if not error:
+        return
     parsed = json.loads(error)
     logfile = parsed['logfile']
+    if not logfile:
+        return
     for line in logfile.splitlines():
         if line.startswith('Error: '):
             click.secho(line, fg='red', err=True)

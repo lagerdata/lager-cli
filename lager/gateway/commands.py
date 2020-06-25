@@ -180,9 +180,6 @@ def erase(ctx, name, message_timeout, overall_timeout):
     '--snr',
     help='Serial number of device to flash. Required if multiple DUTs connected to gateway')
 @click.option('--serial-device', help='Gateway serial port device')
-@click.option('--device', help='Target device type', required=True)
-@click.option('--interface', help='Target interface', required=True)
-@click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
 @click.option('--erase/--no-erase', help='Erase target before flashing', default=True)
 @click.option('--baudrate', help='Serial baud rate', type=int, default=None)
 @click.option('--bytesize', help='Number of data bits', type=click.Choice(['5', '6', '7', '8']), default=None)
@@ -200,7 +197,7 @@ def erase(ctx, name, message_timeout, overall_timeout):
 @click.option('--overall-timeout', default=30*60,
               help='Cumulative time in seconds to wait for session output.'
               'This timeout only affects reading output and does not cancel the actual test run if hit.')
-def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, speed, erase,
+def flash(ctx, name, hexfile, binfile, snr, serial_device, erase,
             baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, force, follow, debugger,
             message_timeout, overall_timeout):
     """
@@ -228,9 +225,6 @@ def flash(ctx, name, hexfile, binfile, snr, serial_device, device, interface, sp
         files.append(('snr', snr))
     if erase:
         files.append(('erase', '1'))
-    files.append(('device', device))
-    files.append(('interface', interface))
-    files.append(('speed', speed))
     files.append(('debugger', debugger))
     serial_options = {
         'device': serial_device,

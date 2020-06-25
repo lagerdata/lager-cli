@@ -10,9 +10,9 @@ import os
 import click
 import trio
 import trio_websocket
-from lager import SUPPORTED_DEVICES
-from lager.status import run_job_output
-from lager.gateway.tunnel import serve_tunnel
+from .. import SUPPORTED_DEVICES
+from ..status import run_job_output
+from ..gateway.tunnel import serve_tunnel
 
 def _get_default_gateway(ctx):
     name = ctx.obj.default_gateway

@@ -4,7 +4,7 @@
     Gateway commands
 """
 import click
-from lager.config import read_config_file, write_config_file
+from ..config import read_config_file, write_config_file
 
 @click.group(name='set')
 def setter():

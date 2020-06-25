@@ -1,11 +1,11 @@
 """
-    lager.gateway.commands
+    lager.lister.commands
 
-    Gateway commands
+    List commands
 """
 import click
 from texttable import Texttable
-from lager import SUPPORTED_DEVICES
+from .. import SUPPORTED_DEVICES
 
 @click.group(name='list')
 def lister():

@@ -9,7 +9,7 @@ import json
 import time
 import datetime
 import requests
-from lager.config import read_config_file, write_config_file
+from ..config import read_config_file, write_config_file
 
 _DEFAULT_CLIENT_ID = 'Ev4qdcEYIrj4TJLJhJGhhKI9wqWbT7IE'
 _DEFAULT_AUDIENCE = 'https://lagerdata.com/gateway'

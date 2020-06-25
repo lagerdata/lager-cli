@@ -4,7 +4,7 @@
     Status commands
 """
 import click
-from lager.status import run_job_output
+from ..status import run_job_output
 
 @click.group(name='job')
 def job():

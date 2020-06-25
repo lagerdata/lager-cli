@@ -8,7 +8,7 @@ import time
 import webbrowser
 import requests
 import click
-from lager.auth import (
+from . import (
     CLIENT_ID, AUTH_URL, AUDIENCE,
     read_config_file, write_config_file,
 )

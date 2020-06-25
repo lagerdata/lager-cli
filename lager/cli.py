@@ -6,9 +6,9 @@
 import traceback
 import click
 
-from lager import __version__
-from lager.config import read_config_file
-from lager.context import LagerContext
+from . import __version__
+from .config import read_config_file
+from .context import LagerContext
 
 from .gateway.commands import gateway
 from .setter.commands import setter
@@ -16,6 +16,7 @@ from .lister.commands import lister
 from .auth import load_auth
 from .auth.commands import login, logout
 from .job.commands import job
+from .devenv.commands import devenv
 
 
 @click.group(invoke_without_command=True)
@@ -42,6 +43,7 @@ cli.add_command(lister)
 cli.add_command(login)
 cli.add_command(logout)
 cli.add_command(job)
+cli.add_command(devenv)
 
 def setup_context(ctx, debug, colorize):
     """

@@ -25,7 +25,7 @@ def print_openocd_error(error):
     if not logfile:
         return
     for line in logfile.splitlines():
-        if line.startswith('Error: '):
+        if 'Error: ' in line:
             click.secho(line, fg='red', err=True)
 
 OPENOCD_ERROR_CODES = set((

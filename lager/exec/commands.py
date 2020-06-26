@@ -1,28 +1,27 @@
 """
-    lager.run.commands
+    lager.exec.commands
 
     Run commands in a docker container
 """
-import os
 import subprocess
 import click
-from ..config import read_config_file, write_config_file, figure_out_devenv
+from ..config import write_config_file, figure_out_devenv
 
-@click.command()
+@click.command(name='exec')
 @click.pass_context
 @click.argument('cmd_name', required=False, metavar='COMMAND')
-@click.option('--devenv', help='devenv in which to run the command', metavar='<devenv>')
-@click.option('--command', help='Raw commandline to run in docker container', metavar='\'<cmdline>\'')
+@click.option('--devenv', help='devenv in which to execute the command', metavar='<devenv>')
+@click.option('--command', help='Raw commandline to execute in docker container', metavar='\'<cmdline>\'')
 @click.option('--save-as', default=None, help='Alias under which to save command specified with --command', metavar='<alias>')
-def run(ctx, cmd_name, devenv, command, save_as):
+def exec_(ctx, cmd_name, devenv, command, save_as):
     """
-        Run COMMAND in a docker container. COMMAND is a named command which was previously saved using `--save-as`.
-        If COMMAND is not provided, run the command specified by --command. If --save-as is also provided,
+        Execute COMMAND in a docker container. COMMAND is a named command which was previously saved using `--save-as`.
+        If COMMAND is not provided, execute the command specified by --command. If --save-as is also provided,
         save the command under that name for later use with COMMAND
     """
     config, section = figure_out_devenv(devenv)
     if not cmd_name and not command:
-        click.echo(run.get_help(ctx))
+        click.echo(exec_.get_help(ctx))
         ctx.exit(0)
 
     if cmd_name and command:

@@ -77,7 +77,7 @@ def create(name, image, source_dir, mount_dir, shell):
 
 def _get_devenv_names(config, target_source_dir=None):
     all_sections = [s for s in config.sections() if s.startswith('DEVENV.')]
-    if target_source_dir:
+    if target_source_dir and len(all_sections) > 1:
         all_sections = [
             s for s in all_sections if config.get(s, 'source_dir') == target_source_dir
         ]
@@ -137,15 +137,13 @@ def run(ctx, cmd_name, name, command, save_as):
         save the command under that name for later use with CMD_NAME
     """
     config, section = figure_out_devenv(name)
-
     if not cmd_name and not command:
-        raise click.UsageError(
-            'Please specify a command shortcut or a command'
-        )
+        click.echo(run.get_help(ctx))
+        ctx.exit(0)
 
     if cmd_name and command:
         raise click.UsageError(
-            'Cannot specify a command shortcut and a command'
+            'Cannot specify a command name and a command'
         )
 
     if cmd_name:

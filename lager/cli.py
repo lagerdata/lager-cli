@@ -19,6 +19,7 @@ from .job.commands import job
 from .devenv.commands import devenv
 from .exec.commands import exec_
 from .flash.commands import flash
+from .run.commands import run
 
 
 @click.group(invoke_without_command=True)
@@ -48,6 +49,7 @@ cli.add_command(job)
 cli.add_command(devenv)
 cli.add_command(exec_)
 cli.add_command(flash)
+cli.add_command(run)
 
 def setup_context(ctx, debug, colorize):
     """

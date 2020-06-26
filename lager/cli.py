@@ -17,6 +17,7 @@ from .auth import load_auth
 from .auth.commands import login, logout
 from .job.commands import job
 from .devenv.commands import devenv
+from .run.commands import run
 
 
 @click.group(invoke_without_command=True)
@@ -44,6 +45,7 @@ cli.add_command(login)
 cli.add_command(logout)
 cli.add_command(job)
 cli.add_command(devenv)
+cli.add_command(run)
 
 def setup_context(ctx, debug, colorize):
     """

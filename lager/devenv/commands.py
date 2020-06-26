@@ -6,7 +6,13 @@
 import os
 import subprocess
 import click
-from ..config import read_config_file, write_config_file
+from ..config import (
+    read_config_file,
+    write_config_file,
+    figure_out_devenv,
+    get_devenv_names,
+    devenv_section,
+)
 
 @click.group()
 def devenv():
@@ -22,30 +28,6 @@ existing_dir_type = click.Path(
     readable=True,
     resolve_path=True,
 )
-
-def _devenv_section(name):
-    return f'DEVENV.{name}'
-
-def figure_out_devenv(name):
-    config = read_config_file()
-    if name is None:
-        names = _get_devenv_names(config, target_source_dir=os.getcwd())
-        if not names:
-            raise click.UsageError(
-                'No development environments defined',
-            )
-        if len(names) > 1:
-            raise click.UsageError(
-                f'Multiple development environments defined. Please specify one of: {", ".join(names)} ; using --name.',
-            )
-        name = names[0]
-
-    section = _devenv_section(name)
-    if not config.has_section(section):
-        raise click.UsageError(
-            f'Development environment {name} not defined',
-        )
-    return config, config[section]
 
 def _get_default_name():
     return os.path.split(os.getcwd())[1]
@@ -66,7 +48,7 @@ def create(name, image, source_dir, mount_dir, shell):
 
 
     config = read_config_file()
-    section = _devenv_section(name)
+    section = devenv_section(name)
     if not config.has_section(section):
         config.add_section(section)
     config.set(section, 'image', image)
@@ -75,26 +57,17 @@ def create(name, image, source_dir, mount_dir, shell):
     config.set(section, 'shell', shell)
     write_config_file(config)
 
-def _get_devenv_names(config, target_source_dir=None):
-    all_sections = [s for s in config.sections() if s.startswith('DEVENV.')]
-    if target_source_dir and len(all_sections) > 1:
-        all_sections = [
-            s for s in all_sections if config.get(s, 'source_dir') == target_source_dir
-        ]
-    return [s.split('.', 1)[1] for s in all_sections]
-
-
 @devenv.command(name='list')
 def list_():
     """
         Show development environment names
     """
     config = read_config_file()
-    names = _get_devenv_names(config)
+    names = get_devenv_names(config)
     if not names:
         click.echo('No development environments defined!')
     for name in names:
-        section = _devenv_section(name)
+        section = devenv_section(name)
         click.echo(name)
         click.echo(f'\timage: {config.get(section, "image")}')
         click.echo(f'\tsource dir: {config.get(section, "source_dir")}')
@@ -125,60 +98,6 @@ def terminal(name):
 
 
 @devenv.command()
-@click.pass_context
-@click.argument('cmd_name', required=False)
-@click.option('--name', required=False, help='Devenv name in which to run the command', metavar='<devenv>')
-@click.option('--command', help='Raw commandline to run in docker container', metavar='<cmdline>')
-@click.option('--save-as', default=None, help='Alias under which to save command specified with --command', metavar='<alias>')
-def run(ctx, cmd_name, name, command, save_as):
-    """
-        Run CMD_NAME in a docker container. CMD_NAME is a named command which was previously saved using `--save-as`.
-        If CMD_NAME is not provided, run the command specified by --command. If --save-as is also provided,
-        save the command under that name for later use with CMD_NAME
-    """
-    config, section = figure_out_devenv(name)
-    if not cmd_name and not command:
-        click.echo(run.get_help(ctx))
-        ctx.exit(0)
-
-    if cmd_name and command:
-        raise click.UsageError(
-            'Cannot specify a command name and a command'
-        )
-
-    if cmd_name:
-        key = f'cmd.{cmd_name}'
-        if key not in section:
-            raise click.UsageError(
-                f'Command `{cmd_name}` not found',
-            )
-        cmd_to_run = section.get(key)
-    else:
-        cmd_to_run = command
-        if save_as:
-            section[f'cmd.{save_as}'] = cmd_to_run
-            write_config_file(config)
-
-    image = section.get('image')
-    source_dir = section.get('source_dir')
-    mount_dir = section.get('mount_dir')
-    shell = section.get('shell')
-    proc = subprocess.run([
-        'docker',
-        'run',
-        '-it',
-        '--rm',
-        '-v',
-        f'{source_dir}:{mount_dir}',
-        image,
-        shell,
-        '-c',
-        cmd_to_run
-    ], check=False)
-    ctx.exit(proc.returncode)
-
-
-@devenv.command()
 @click.argument('name', required=True, )
 def delete(name):
     """
@@ -189,5 +108,5 @@ def delete(name):
         exist it is ignored.
     """
     config = read_config_file()
-    config.remove_section(_devenv_section(name))
+    config.remove_section(devenv_section(name))
     write_config_file(config)

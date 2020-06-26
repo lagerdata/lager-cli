@@ -5,6 +5,7 @@
 """
 import os
 import configparser
+import click
 
 _LAGER_CONFIG_FILE_NAME = '.lager'
 
@@ -32,3 +33,38 @@ def write_config_file(config):
     """
     with open(_get_config_file_path(), 'w') as f:
         config.write(f)
+
+
+def devenv_section(name):
+    return f'DEVENV.{name}'
+
+def figure_out_devenv(name):
+    config = read_config_file()
+    if name is None:
+        names = get_devenv_names(config, target_source_dir=os.getcwd())
+        if not names:
+            raise click.UsageError(
+                'No development environments defined',
+            )
+        if len(names) > 1:
+            raise click.UsageError(
+                f'Multiple development environments defined. Please specify one of: {", ".join(names)} ; using --name.',
+            )
+        name = names[0]
+
+    section = devenv_section(name)
+    if not config.has_section(section):
+        raise click.UsageError(
+            f'Development environment {name} not defined',
+        )
+    return config, config[section]
+
+def get_devenv_names(config, target_source_dir=None):
+    all_sections = [s for s in config.sections() if s.startswith('DEVENV.')]
+    if target_source_dir and len(all_sections) > 1:
+        all_sections = [
+            s for s in all_sections if config.get(s, 'source_dir') == target_source_dir
+        ]
+    return [s.split('.', 1)[1] for s in all_sections]
+
+

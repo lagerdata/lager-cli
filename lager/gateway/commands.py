@@ -13,31 +13,7 @@ import trio_websocket
 from .. import SUPPORTED_DEVICES
 from ..status import run_job_output
 from ..gateway.tunnel import serve_tunnel
-
-def _get_default_gateway(ctx):
-    name = ctx.obj.default_gateway
-    if name is None:
-        session = ctx.obj.session
-        url = 'gateway/list'
-        resp = session.get(url)
-        resp.raise_for_status()
-        gateways = resp.json()['gateways']
-
-        if not gateways:
-            click.secho('No gateways found! Please contact support@lagerdata.com', fg='red')
-            ctx.exit(1)
-        if len(gateways) == 1:
-            ctx.obj.default_gateway = gateways[0]['id']
-            return gateways[0]['id']
-
-        hint = 'NAME. Set a default using `lager set default gateway <id>`'
-        raise click.MissingParameter(
-            param=ctx.command.params[0],
-            param_hint=hint,
-            ctx=ctx,
-            param_type='argument',
-        )
-    return name
+from ..context import get_default_gateway
 
 @click.group()
 def gateway():
@@ -54,7 +30,7 @@ def hello(ctx, name):
         Say hello to gateway
     """
     if name is None:
-        name = _get_default_gateway(ctx)
+        name = get_default_gateway(ctx)
     session = ctx.obj.session
     url = 'gateway/{}/hello'.format(name)
     resp = session.get(url)
@@ -69,7 +45,7 @@ def serial_numbers(ctx, name, model):
         Get serial numbers of devices attached to gateway
     """
     if name is None:
-        name = _get_default_gateway(ctx)
+        name = get_default_gateway(ctx)
 
     session = ctx.obj.session
     url = 'gateway/{}/serial-numbers'.format(name)
@@ -86,7 +62,7 @@ def serial_ports(ctx, name):
         Get serial ports attached to gateway
     """
     if name is None:
-        name = _get_default_gateway(ctx)
+        name = get_default_gateway(ctx)
 
     session = ctx.obj.session
     url = 'gateway/{}/serial-ports'.format(name)
@@ -152,7 +128,7 @@ class BinfileType(click.ParamType):
               'This timeout only affects reading output and does not cancel the actual test run if hit.')
 def erase(ctx, name, message_timeout, overall_timeout):
     if name is None:
-        name = _get_default_gateway(ctx)
+        name = get_default_gateway(ctx)
 
     ensure_running(name, ctx)
 
@@ -210,7 +186,7 @@ def flash(ctx, name, hexfile, binfile, snr, serial_device, erase,
         )
 
     if name is None:
-        name = _get_default_gateway(ctx)
+        name = get_default_gateway(ctx)
 
     session = ctx.obj.session
     url = 'gateway/{}/flash-duck'.format(name)
@@ -300,7 +276,7 @@ def jobs(ctx, name):
         Get serial ports attached to gateway
     """
     if name is None:
-        name = _get_default_gateway(ctx)
+        name = get_default_gateway(ctx)
 
     session = ctx.obj.session
     url = 'gateway/{}/jobs'.format(name)
@@ -328,7 +304,7 @@ def gdbserver(ctx, name, host, port):
         all interfaces, use --host '*'
     """
     if name is None:
-        name = _get_default_gateway(ctx)
+        name = get_default_gateway(ctx)
 
     ensure_running(name, ctx)
 
@@ -365,7 +341,7 @@ def connect(ctx, name, snr, device, interface, transport, speed, force, debugger
         Connect your gateway to your DUCK.
     """
     if name is None:
-        name = _get_default_gateway(ctx)
+        name = get_default_gateway(ctx)
 
     # Step one, try to start gdb on gateway
     session = ctx.obj.session
@@ -393,7 +369,7 @@ def disconnect(ctx, name, debugger):
         Disconnect your gateway from your DUCK.
     """
     if name is None:
-        name = _get_default_gateway(ctx)
+        name = get_default_gateway(ctx)
 
     # stop debubber
     session = ctx.obj.session
@@ -412,7 +388,7 @@ def status(ctx, name):
         Disconnect your gateway from your DUCK.
     """
     if name is None:
-        name = _get_default_gateway(ctx)
+        name = get_default_gateway(ctx)
 
     # stop debubber
     session = ctx.obj.session

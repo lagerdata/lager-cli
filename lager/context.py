@@ -138,3 +138,32 @@ class LagerContext:  # pylint: disable=too-few-public-methods
         ]
 
         return (uri, dict(extra_headers=headers))
+
+def get_default_gateway(ctx):
+    """
+        Check for a default gateway in config; if not present, check if the user
+        only has 1 gateway. If so, use that one.
+    """
+    name = ctx.obj.default_gateway
+    if name is None:
+        session = ctx.obj.session
+        url = 'gateway/list'
+        resp = session.get(url)
+        resp.raise_for_status()
+        gateways = resp.json()['gateways']
+
+        if not gateways:
+            click.secho('No gateways found! Please contact support@lagerdata.com', fg='red')
+            ctx.exit(1)
+        if len(gateways) == 1:
+            ctx.obj.default_gateway = gateways[0]['id']
+            return gateways[0]['id']
+
+        hint = 'NAME. Set a default using `lager set default gateway <id>`'
+        raise click.MissingParameter(
+            param=ctx.command.params[0],
+            param_hint=hint,
+            ctx=ctx,
+            param_type='argument',
+        )
+    return name

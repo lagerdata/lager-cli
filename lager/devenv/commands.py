@@ -23,6 +23,9 @@ existing_dir_type = click.Path(
     resolve_path=True,
 )
 
+def _devenv_section(name):
+    return f'DEVENV.{name}'
+
 def figure_out_devenv(name):
     config = read_config_file()
     if name is None:
@@ -38,7 +41,7 @@ def figure_out_devenv(name):
         name = names[0]
 
     config = read_config_file()
-    section = f'DEVENV.{name}'
+    section = _devenv_section(name)
     if not config.has_section(section):
         raise click.UsageError(
             f'Development environment {name} not defined',
@@ -65,7 +68,7 @@ def create(name, image, source_dir, mount_dir, shell):
 
 
     config = read_config_file()
-    section = f'DEVENV.{name}'
+    section = _devenv_section(name)
     if not config.has_section(section):
         config.add_section(section)
     config.set(section, 'image', image)
@@ -167,3 +170,18 @@ def run(ctx, cmd_name, name, command, save_as):
         cmd_to_run
     ], check=False)
     ctx.exit(proc.returncode)
+
+
+@devenv.command()
+@click.argument('name', required=True, )
+def delete(name):
+    """
+        Delete NAME
+
+        NAME is the name of the devenv to delete. This will simply remove the named devenv from your
+        Lager config and will not touch any other files on your filesystem. If the name section does
+        exist it is ignored.
+    """
+    config = read_config_file()
+    config.remove_section(_devenv_section(name))
+    write_config_file(config)

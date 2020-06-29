@@ -21,7 +21,7 @@ from .exec.commands import exec_
 from .flash.commands import flash
 from .run.commands import run
 from .erase.commands import erase
-
+from .reset.commands import reset
 
 @click.group(invoke_without_command=True)
 @click.pass_context
@@ -52,6 +52,7 @@ cli.add_command(exec_)
 cli.add_command(flash)
 cli.add_command(run)
 cli.add_command(erase)
+cli.add_command(reset)
 
 def setup_context(ctx, debug, colorize):
     """

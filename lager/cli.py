@@ -20,6 +20,7 @@ from .devenv.commands import devenv
 from .exec.commands import exec_
 from .flash.commands import flash
 from .run.commands import run
+from .erase.commands import erase
 
 
 @click.group(invoke_without_command=True)
@@ -50,6 +51,7 @@ cli.add_command(devenv)
 cli.add_command(exec_)
 cli.add_command(flash)
 cli.add_command(run)
+cli.add_command(erase)
 
 def setup_context(ctx, debug, colorize):
     """

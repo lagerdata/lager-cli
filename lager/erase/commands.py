@@ -5,6 +5,7 @@
 """
 import click
 from ..context import get_default_gateway, MemoryAddressType
+from ..util import stream_output
 
 @click.command()
 @click.pass_context
@@ -22,5 +23,4 @@ def erase(ctx, gateway, start_addr, end_addr):
     url = 'gateway/{}/erase-duck'.format(gateway)
     addresses = dict(start_addr=start_addr, end_addr=end_addr)
     resp = session.post(url, json=addresses)
-    for chunk in resp.iter_content(chunk_size=8):
-        click.echo(chunk, nl=False)
+    stream_output(resp)

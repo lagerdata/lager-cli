@@ -8,6 +8,7 @@ import collections
 import itertools
 import click
 from ..context import get_default_gateway
+from ..util import stream_output
 
 class HexParamType(click.ParamType):
     """
@@ -94,5 +95,4 @@ def flash(ctx, gateway, hexfile, binfile, preverify, verify, force):
     files.append(('force', force))
 
     resp = session.post(url, files=files, stream=True)
-    for chunk in resp.iter_content(chunk_size=8):
-        click.echo(chunk, nl=False)
+    stream_output(resp)

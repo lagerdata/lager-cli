@@ -4,9 +4,12 @@
     GDB tunnel functions
 """
 import functools
+import logging
 import click
 import trio
 import trio_websocket
+
+logger = logging.getLogger(__name__)
 
 async def send_to_websocket(websocket, gdb_client_stream, nursery):
     """
@@ -45,6 +48,8 @@ async def connection_handler(connection_params, gdb_client_stream):
             async with trio.open_nursery() as nursery:
                 nursery.start_soon(send_to_websocket, websocket, gdb_client_stream, nursery)
                 nursery.start_soon(send_to_gdb, websocket, gdb_client_stream, nursery)
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception('Exception in connection_handler', exc_info=exc)
     finally:
         click.echo(f'gdb client disconnected: {sockname}')
 
@@ -56,10 +61,6 @@ async def serve_tunnel(host, port, connection_params, *, task_status=trio.TASK_S
     """
     # (uri, kwargs) = connection_params
     async with trio.open_nursery() as nursery:
-        # async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs):
-        #     # Make an initial connection to ensure auth info is correct
-        #     pass
-
         handler = functools.partial(connection_handler, connection_params)
         serve_listeners = functools.partial(trio.serve_tcp, handler, port, host=host)
 

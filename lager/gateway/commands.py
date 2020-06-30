@@ -12,7 +12,7 @@ import trio
 import trio_websocket
 from .. import SUPPORTED_DEVICES
 from ..status import run_job_output
-from ..gateway.tunnel import serve_tunnel
+from .tunnel import serve_tunnel
 from ..context import get_default_gateway
 
 @click.group()

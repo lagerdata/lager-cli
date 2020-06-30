@@ -12,6 +12,8 @@ from ..config import (
     figure_out_devenv,
     get_devenv_names,
     devenv_section,
+    add_devenv_command,
+    all_commands,
 )
 
 @click.group()
@@ -98,7 +100,7 @@ def terminal(name):
 
 
 @devenv.command()
-@click.argument('name', required=True, )
+@click.argument('name', required=True)
 def delete(name):
     """
         Delete NAME
@@ -110,3 +112,30 @@ def delete(name):
     config = read_config_file()
     config.remove_section(devenv_section(name))
     write_config_file(config)
+
+
+@devenv.command()
+@click.argument('command_name')
+@click.argument('command', required=False)
+@click.option('--devenv', '_devenv', help='Add command to devenv named `foo`', metavar='foo')
+def add_command(command_name, command, _devenv):
+    """
+        Add COMMAND to devenv with the name COMMAND
+    """
+    config, section = figure_out_devenv(_devenv)
+    if not command:
+        command = click.prompt('Please enter the command')
+
+    add_devenv_command(section, command_name, command)
+    write_config_file(config)
+
+
+@devenv.command()
+@click.option('--devenv', '_devenv', help='Devenv name')
+def commands(_devenv):
+    """
+        List the commands in a devenv
+    """
+    _, section = figure_out_devenv(_devenv)
+    for name, command in all_commands(section).items():
+        click.echo(f'{name}: {command}')

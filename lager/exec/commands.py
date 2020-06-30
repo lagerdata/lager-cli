@@ -5,7 +5,7 @@
 """
 import subprocess
 import click
-from ..config import write_config_file, figure_out_devenv
+from ..config import write_config_file, figure_out_devenv, add_devenv_command
 
 @click.command(name='exec')
 @click.pass_context
@@ -39,7 +39,7 @@ def exec_(ctx, cmd_name, devenv, command, save_as):
     else:
         cmd_to_run = command
         if save_as:
-            section[f'cmd.{save_as}'] = cmd_to_run
+            add_devenv_command(section, save_as, cmd_to_run)
             write_config_file(config)
 
     image = section.get('image')

@@ -5,6 +5,7 @@
 """
 import os
 import configparser
+import warnings
 import click
 
 _LAGER_CONFIG_FILE_NAME = '.lager'
@@ -67,4 +68,14 @@ def get_devenv_names(config, target_source_dir=None):
         ]
     return [s.split('.', 1)[1] for s in all_sections]
 
+def add_devenv_command(section, command_name, command):
+    key = f'cmd.{command_name}'
+    if key in section:
+        click.echo(f'Command `{command_name}` already exists, overwriting. ', nl=False)
+        click.echo(f'Previous value: {section[key]}')
+    section[key] = command
 
+def all_commands(section):
+    return {
+        k.split('.', 1)[1]: section[k] for k in section.keys() if k.startswith('cmd.')
+    }

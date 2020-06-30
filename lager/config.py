@@ -68,11 +68,11 @@ def get_devenv_names(config, target_source_dir=None):
         ]
     return [s.split('.', 1)[1] for s in all_sections]
 
-def add_devenv_command(section, command_name, command):
+def add_devenv_command(section, command_name, command, warn):
     key = f'cmd.{command_name}'
-    if key in section:
-        click.echo(f'Command `{command_name}` already exists, overwriting. ', nl=False)
-        click.echo(f'Previous value: {section[key]}')
+    if key in section and warn:
+        click.echo(f'Command `{command_name}` already exists, overwriting. ', nl=False, err=True)
+        click.echo(f'Previous value: {section[key]}', err=True)
     section[key] = command
 
 def all_commands(section):

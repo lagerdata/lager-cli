@@ -13,7 +13,8 @@ from ..config import write_config_file, figure_out_devenv, add_devenv_command
 @click.option('--devenv', help='devenv in which to execute the command', metavar='<devenv>')
 @click.option('--command', help='Raw commandline to execute in docker container', metavar='\'<cmdline>\'')
 @click.option('--save-as', default=None, help='Alias under which to save command specified with --command', metavar='<alias>')
-def exec_(ctx, cmd_name, devenv, command, save_as):
+@click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command. Default True')
+def exec_(ctx, cmd_name, devenv, command, save_as, warn):
     """
         Execute COMMAND in a docker container. COMMAND is a named command which was previously saved using `--save-as`.
         If COMMAND is not provided, execute the command specified by --command. If --save-as is also provided,
@@ -39,7 +40,7 @@ def exec_(ctx, cmd_name, devenv, command, save_as):
     else:
         cmd_to_run = command
         if save_as:
-            add_devenv_command(section, save_as, cmd_to_run)
+            add_devenv_command(section, save_as, cmd_to_run, warn)
             write_config_file(config)
 
     image = section.get('image')

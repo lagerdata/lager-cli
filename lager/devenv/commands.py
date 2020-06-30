@@ -118,7 +118,8 @@ def delete(name):
 @click.argument('command_name')
 @click.argument('command', required=False)
 @click.option('--devenv', '_devenv', help='Add command to devenv named `foo`', metavar='foo')
-def add_command(command_name, command, _devenv):
+@click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command. Default True')
+def add_command(command_name, command, _devenv, warn):
     """
         Add COMMAND to devenv with the name COMMAND
     """
@@ -126,7 +127,7 @@ def add_command(command_name, command, _devenv):
     if not command:
         command = click.prompt('Please enter the command')
 
-    add_devenv_command(section, command_name, command)
+    add_devenv_command(section, command_name, command, warn)
     write_config_file(config)
 
 

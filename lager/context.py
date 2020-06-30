@@ -126,9 +126,9 @@ class LagerContext:  # pylint: disable=too-few-public-methods
             Yields a websocket connection to the given path
         """
         if socktype == 'job':
-            path = f'/job/{kwargs["job_id"]}'
+            path = f'/ws/job/{kwargs["job_id"]}'
         elif socktype == 'gdb-tunnel':
-            path = f'/gateway/{kwargs["gateway_id"]}/gdb-tunnel'
+            path = f'/ws/gateway/{kwargs["gateway_id"]}/gdb-tunnel'
         else:
             raise ValueError(f'Invalid websocket type: {socktype}')
         uri = urllib.parse.urljoin(self.ws_host, path)

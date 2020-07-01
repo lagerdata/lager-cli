@@ -74,6 +74,17 @@ def add_devenv_command(section, command_name, command, warn):
         click.echo(f'Previous value: {section[key]}', err=True)
     section[key] = command
 
+def remove_devenv_command(section, command_name):
+    """
+        Delete a named command
+    """
+    key = f'cmd.{command_name}'
+    if key not in section:
+        click.secho(f'Command `{command_name}` does not exist.', fg='red', err=True)
+        click.get_current_context().exit(1)
+    del section[key]
+
+
 def all_commands(section):
     return {
         k.split('.', 1)[1]: section[k] for k in section.keys() if k.startswith('cmd.')

@@ -13,6 +13,7 @@ from ..config import (
     get_devenv_names,
     devenv_section,
     add_devenv_command,
+    remove_devenv_command,
     all_commands,
 )
 
@@ -121,13 +122,25 @@ def delete(name):
 @click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command. Default True')
 def add_command(command_name, command, _devenv, warn):
     """
-        Add COMMAND to devenv with the name COMMAND
+        Add COMMAND to devenv with the name COMMAND_NAME
     """
     config, section = figure_out_devenv(_devenv)
     if not command:
         command = click.prompt('Please enter the command')
 
     add_devenv_command(section, command_name, command, warn)
+    write_config_file(config)
+
+@devenv.command()
+@click.argument('command_name')
+@click.option('--devenv', '_devenv', help='Add command to devenv named `foo`', metavar='foo')
+def delete_command(command_name, _devenv):
+    """
+        Delete COMMAND_NAME to devenv with the name COMMAND
+    """
+    config, section = figure_out_devenv(_devenv)
+
+    remove_devenv_command(section, command_name)
     write_config_file(config)
 
 

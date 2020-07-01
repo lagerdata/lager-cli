@@ -136,7 +136,7 @@ def add_command(command_name, command, _devenv, warn):
 @click.option('--devenv', '_devenv', help='Add command to devenv named `foo`', metavar='foo')
 def delete_command(command_name, _devenv):
     """
-        Delete COMMAND_NAME to devenv with the name COMMAND
+        Delete COMMAND_NAME from devenv
     """
     config, section = figure_out_devenv(_devenv)
 

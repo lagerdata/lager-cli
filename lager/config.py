@@ -5,7 +5,6 @@
 """
 import os
 import configparser
-import warnings
 import click
 
 _LAGER_CONFIG_FILE_NAME = '.lager'

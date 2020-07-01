@@ -29,3 +29,13 @@ def gateway(gateway_id):
     config = read_config_file()
     config.set('LAGER', 'gateway_id', gateway_id)
     write_config_file(config)
+
+@default.command()
+@click.argument('device_path')
+def serial_device(device_path):
+    """
+        Set default serial device path
+    """
+    config = read_config_file()
+    config.set('LAGER', 'serial_device', device_path)
+    write_config_file(config)

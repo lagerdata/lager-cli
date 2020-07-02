@@ -20,10 +20,10 @@ from ..config import read_config_file
 @click.option('--xonxoff/--no-xonxoff', default=None, help='Enable/disable software XON/XOFF flow control')
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
-@click.option('--test-matcher', help='End the UART session when end-of-test is detected', type=click.Choice(['unity']), default=None)
+@click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['unity']), default=None)
 @click.option('--message-timeout', help='Message timeout', type=click.INT, default=None)
 @click.option('--overall-timeout', help='Overall timeout', type=click.INT, default=None)
-def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_matcher, message_timeout, overall_timeout):
+def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_runner, message_timeout, overall_timeout):
     """
         Connect to UART on a DUT.
     """
@@ -66,7 +66,7 @@ def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonx
     }
     json_data = {
         'serial_options': serial_options,
-        'test_matcher': test_matcher,
+        'test_runner': test_runner,
     }
 
     resp = session.post(url, json=json_data)

@@ -1,8 +1,9 @@
 """
-    lager.erase.commands
+    lager.uart.commands
 
-    Commands for erasing a DUT
+    Commands for DUT UART interaction
 """
+import math
 import click
 from ..context import get_default_gateway
 from ..status import run_job_output
@@ -26,6 +27,11 @@ def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonx
     """
         Connect to UART on a DUT.
     """
+    if message_timeout is None:
+        message_timeout = math.inf
+    if overall_timeout is None:
+        overall_timeout = math.inf
+
     if serial_device is None:
         config = read_config_file()
         if 'LAGER' in config and 'serial_device' in config['LAGER']:

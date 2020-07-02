@@ -55,6 +55,43 @@ class InterMessageTimeout(Exception):
     """
     pass
 
+async def heartbeat(ws, timeout, interval):
+    '''
+    Send periodic pings on WebSocket ``ws``.
+
+    Wait up to ``timeout`` seconds to send a ping and receive a pong. Raises
+    ``TooSlowError`` if the timeout is exceeded. If a pong is received, then
+    wait ``interval`` seconds before sending the next ping.
+
+    This function runs until cancelled.
+
+    :param ws: A WebSocket to send heartbeat pings on.
+    :param float timeout: Timeout in seconds.
+    :param float interval: Interval between receiving pong and sending next
+        ping, in seconds.
+    :raises: ``ConnectionClosed`` if ``ws`` is closed.
+    :raises: ``TooSlowError`` if the timeout expires.
+    :returns: This function runs until cancelled.
+    '''
+    while True:
+        with trio.fail_after(timeout):
+            await ws.ping()
+        await trio.sleep(interval)
+
+async def read_from_websocket(websocket, message_timeout):
+    while True:
+        try:
+            with trio.fail_after(message_timeout):
+                try:
+                    message = await websocket.get_message()
+                except trio_websocket.ConnectionClosed as exc:
+                    if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
+                        raise
+                    break
+        except trio.TooSlowError:
+            raise InterMessageTimeout(message_timeout)
+        await handle_message(bson.loads(message))
+
 async def display_job_output(connection_params, message_timeout, overall_timeout):
     """
         Display job output from websocket
@@ -62,18 +99,9 @@ async def display_job_output(connection_params, message_timeout, overall_timeout
     (uri, kwargs) = connection_params
     with trio.fail_after(overall_timeout):
         async with open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
-            while True:
-                try:
-                    with trio.fail_after(message_timeout):
-                        try:
-                            message = await websocket.get_message()
-                        except trio_websocket.ConnectionClosed as exc:
-                            if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
-                                raise
-                            break
-                except trio.TooSlowError:
-                    raise InterMessageTimeout(message_timeout)
-                await handle_message(bson.loads(message))
+            async with trio.open_nursery() as nursery:
+                nursery.start_soon(heartbeat, websocket, 5, 1)
+                nursery.start_soon(read_from_websocket, websocket, message_timeout)
 
 def run_job_output(connection_params, message_timeout, overall_timeout, debug=False):
     """

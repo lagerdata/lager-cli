@@ -38,19 +38,26 @@ def write_config_file(config):
 def devenv_section(name):
     return f'DEVENV.{name}'
 
+def find_scoped_devenv(config, scope):
+    scoped_names = get_devenv_names(config, target_source_dir=scope)
+    if not scoped_names:
+        raise click.UsageError(
+            f'No development environments defined for {scope}',
+        )
+    if len(scoped_names) > 1:
+        raise click.UsageError(
+            f'Multiple development environments defined. Please specify one of: {", ".join(scoped_names)} ; using --name.',
+        )
+    return scoped_names[0]
+
 def figure_out_devenv(name):
     config = read_config_file()
     if name is None:
-        names = get_devenv_names(config, target_source_dir=os.getcwd())
-        if not names:
-            raise click.UsageError(
-                'No development environments defined',
-            )
-        if len(names) > 1:
-            raise click.UsageError(
-                f'Multiple development environments defined. Please specify one of: {", ".join(names)} ; using --name.',
-            )
-        name = names[0]
+        all_devenvs = get_devenv_names(config)
+        if len(all_devenvs) == 1:
+            name = all_devenvs[0]
+        else:
+            name = find_scoped_devenv(config, os.getcwd())
 
     section = devenv_section(name)
     if not config.has_section(section):
@@ -63,7 +70,7 @@ def get_devenv_names(config, target_source_dir=None):
     all_sections = [s for s in config.sections() if s.startswith('DEVENV.')]
     if target_source_dir and len(all_sections) > 1:
         all_sections = [
-            s for s in all_sections if config.get(s, 'source_dir') == target_source_dir
+            s for s in all_sections if target_source_dir.startswith(config.get(s, 'source_dir'))
         ]
     return [s.split('.', 1)[1] for s in all_sections]
 

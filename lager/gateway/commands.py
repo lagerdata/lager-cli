@@ -331,7 +331,7 @@ def gdbserver(ctx, name, host, port):
     '--snr',
     help='Serial number of device to connect. Required if multiple DUTs connected to gateway')
 @click.option('--device', help='Target device type', type=click.Choice(SUPPORTED_DEVICES), required=True)
-@click.option('--interface', help='Target interface', type=click.Choice(['ftdi', 'jlink']), default='ftdi')
+@click.option('--interface', help='Target interface', type=click.Choice(['ftdi', 'jlink', 'cmsis-dap']), default='ftdi')
 @click.option('--transport', help='Target transport', type=click.Choice(['swd', 'jtag']), default='swd')
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
 @click.option('--force', is_flag=True)

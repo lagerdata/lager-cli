@@ -49,10 +49,11 @@ AUTH_TOKEN_KEY = 'LAGER_AUTH_TOKEN'
 REFRESH_TOKEN_KEY = 'LAGER_REFRESH_TOKEN'
 TOKEN_TYPE_KEY = 'LAGER_TOKEN_TYPE'
 def _load_auth_from_environ(env):
-    if AUTH_TOKEN_KEY in env and REFRESH_TOKEN_KEY in env and TOKEN_TYPE_KEY in env:
+    if AUTH_TOKEN_KEY in env and TOKEN_TYPE_KEY in env and (
+        env[TOKEN_TYPE_KEY].lower() == 'secret' or REFRESH_TOKEN_KEY in env):
         return dict(
             token=env[AUTH_TOKEN_KEY],
-            refresh=env[REFRESH_TOKEN_KEY],
+            refresh=env.get(REFRESH_TOKEN_KEY),
             type=env[TOKEN_TYPE_KEY],
         )
     return None
@@ -71,7 +72,7 @@ def load_auth():
         update_config = True
         auth = config['AUTH']
 
-    if _is_expired(auth['token']):
+    if auth['type'].lower() == 'bearer' and _is_expired(auth['token']):
         fresh_token = _refresh(auth['refresh'])
         auth['token'] = fresh_token['access_token']
         auth['type'] = fresh_token['token_type']

@@ -10,4 +10,5 @@ SUPPORTED_DEVICES = (
     'nrf52',
     'cc3220sf',
     'cc3235sf',
+    'atsame70',
 )

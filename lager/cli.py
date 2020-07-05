@@ -39,7 +39,7 @@ def cli(ctx=None, see_version=None, debug=False, colorize=False):
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
     else:
-        if ctx.invoked_subcommand not in ('login', 'logout', 'set', 'devenv'):
+        if ctx.invoked_subcommand not in ('login', 'logout', 'set', 'devenv', 'exec'):
             setup_context(ctx, debug, colorize)
 
 cli.add_command(gateway)

@@ -78,4 +78,4 @@ def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonx
     job_id = test_run['test_run']['id']
     click.echo('Job id: {}'.format(job_id))
     connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
-    run_job_output(connection_params, message_timeout, overall_timeout, ctx.obj.debug)
+    run_job_output(connection_params, test_runner, message_timeout, overall_timeout, ctx.obj.debug)

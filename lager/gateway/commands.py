@@ -226,48 +226,6 @@ def flash(ctx, name, hexfile, binfile, snr, serial_device, erase,
     else:
         click.echo(test_run)
 
-def dump_flash_output(resp, ctx):
-    """
-        Stream flash response output
-    """
-    style = ctx.obj.style
-    separator = None
-    in_tests = False
-    has_fail = False
-    in_summary = False
-    summary_separator = '-----------------------'
-    for line in resp.iter_lines(chunk_size=8):
-        if separator is None:
-            separator = line
-            continue
-        if line == separator:
-            in_tests = True
-            continue
-        line = line.decode()
-        if not in_tests:
-            click.echo(line)
-        else:
-            if line == summary_separator:
-                in_summary = True
-                click.echo(line)
-                continue
-            if in_summary:
-                color = 'red' if has_fail else 'green'
-                click.echo(style(line, fg=color))
-            else:
-                if ':FAIL' in line:
-                    has_fail = True
-                    click.echo(style(line, fg='red'))
-                elif ':PASS' in line:
-                    click.echo(style(line, fg='green'))
-                elif ':INFO' in line:
-                    click.echo(style(line, fg='yellow'))
-                else:
-                    click.echo(line)
-    if has_fail:
-        ctx.exit(1)
-
-
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)

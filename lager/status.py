@@ -11,6 +11,7 @@ import trio_websocket
 from trio_websocket import open_websocket_url
 import wsproto.frame_protocol as wsframeproto
 import requests
+from .matchers import test_matcher_factory
 
 def stream_response(response):
     """
@@ -20,7 +21,7 @@ def stream_response(response):
         for chunk in response.iter_content(chunk_size=None):
             click.echo(chunk, nl=False)
 
-async def handle_url_message(urls):
+async def handle_url_message(matcher, urls):
     """
         Handle a message with data location urls
     """
@@ -30,23 +31,24 @@ async def handle_url_message(urls):
         response.raise_for_status()
         await trio.to_thread.run_sync(stream_response, response)
 
-async def handle_data_message(message):
+async def handle_data_message(matcher, message):
     """
         Handle a data message
     """
     for item in message:
         entry = item['entry']
         if 'payload' in entry:
-            click.echo(entry['payload'].decode(), nl=False)
+            payload = entry['payload'].decode()
+            matcher.feed(payload)
 
-async def handle_message(message):
+async def handle_message(matcher, message):
     """
         Handle an individual parsed websocket message
     """
     if 'data' in message:
-        return await handle_data_message(message['data'])
+        return await handle_data_message(matcher, message['data'])
     if 'urls' in message:
-        return await handle_url_message(message['urls'])
+        return await handle_url_message(matcher, message['urls'])
     return None
 
 class InterMessageTimeout(Exception):
@@ -73,12 +75,16 @@ async def heartbeat(ws, timeout, interval):
     :raises: ``TooSlowError`` if the timeout expires.
     :returns: This function runs until cancelled.
     '''
-    while True:
-        with trio.fail_after(timeout):
-            await ws.ping()
-        await trio.sleep(interval)
+    try:
+        while True:
+            with trio.fail_after(timeout):
+                await ws.ping()
+            await trio.sleep(interval)
+    except trio_websocket.ConnectionClosed as exc:
+        if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
+            raise
 
-async def read_from_websocket(websocket, message_timeout):
+async def read_from_websocket(websocket, matcher, message_timeout):
     while True:
         try:
             with trio.fail_after(message_timeout):
@@ -90,25 +96,30 @@ async def read_from_websocket(websocket, message_timeout):
                     break
         except trio.TooSlowError:
             raise InterMessageTimeout(message_timeout)
-        await handle_message(bson.loads(message))
+        await handle_message(matcher, bson.loads(message))
+    matcher.done()
 
-async def display_job_output(connection_params, message_timeout, overall_timeout):
+async def display_job_output(connection_params, test_runner, message_timeout, overall_timeout):
     """
         Display job output from websocket
     """
     (uri, kwargs) = connection_params
+    match_class = test_matcher_factory(test_runner)
+    matcher = match_class()
     with trio.fail_after(overall_timeout):
         async with open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
             async with trio.open_nursery() as nursery:
                 nursery.start_soon(heartbeat, websocket, 5, 1)
-                nursery.start_soon(read_from_websocket, websocket, message_timeout)
+                nursery.start_soon(read_from_websocket, websocket, matcher, message_timeout)
+    return matcher
 
-def run_job_output(connection_params, message_timeout, overall_timeout, debug=False):
+def run_job_output(connection_params, test_runner, message_timeout, overall_timeout, debug=False):
     """
         Run async task to get job output from websocket
     """
     try:
-        trio.run(display_job_output, connection_params, message_timeout, overall_timeout)
+        matcher = trio.run(display_job_output, connection_params, test_runner, message_timeout, overall_timeout)
+        click.get_current_context().exit(matcher.exit_code)
     except trio.TooSlowError:
         suffix = '' if overall_timeout == 1 else 's'
         message = f'Job status timed out after {overall_timeout} second{suffix}'

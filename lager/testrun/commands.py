@@ -4,13 +4,11 @@
     Commands for flashing an image to a DUT and collecting results
 """
 import math
-import time
 import click
 from ..context import get_default_gateway
 from ..reset.commands import do_reset
 from ..uart.commands import do_uart
 from ..flash.commands import do_flash
-from ..reset.commands import do_reset
 from ..paramtypes import BinfileType
 from ..util import stream_output
 from ..status import run_job_output
@@ -72,25 +70,4 @@ def testrun(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
     job_id = test_run['test_run']['id']
     click.echo('Job id: {}'.format(job_id))
     connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
-    run_job_output(connection_params, message_timeout, overall_timeout, ctx.obj.debug)
-
-
-
-
-# def do_flash(session, gateway, hexfile, binfile, preverify, verify, force=False):
-#     """
-#         Perform the actual flash operation
-#     """
-#     url = 'gateway/{}/flash-duck'.format(gateway)
-#     files = list(zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile]))
-#     files.extend(
-#         zip(itertools.repeat('binfile'), [open(binf.path, 'rb') for binf in binfile])
-#     )
-#     files.extend(
-#         zip(itertools.repeat('binfile_address'), [binf.address for binf in binfile])
-#     )
-#     files.append(('preverify', preverify))
-#     files.append(('verify', verify))
-#     files.append(('force', force))
-
-#     return session.post(url, files=files, stream=True)
+    run_job_output(connection_params, test_runner, message_timeout, overall_timeout, ctx.obj.debug)

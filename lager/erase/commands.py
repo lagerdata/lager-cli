@@ -4,7 +4,8 @@
     Commands for erasing a DUT
 """
 import click
-from ..context import get_default_gateway, MemoryAddressType
+from ..context import get_default_gateway
+from ..paramtypes import MemoryAddressType
 from ..util import stream_output
 
 @click.command()

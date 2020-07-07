@@ -9,29 +9,7 @@ from ..context import get_default_gateway
 from ..status import run_job_output
 from ..config import read_config_file
 
-@click.command()
-@click.pass_context
-@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
-@click.option('--serial-device', help='Gateway serial port device path', metavar='path')
-@click.option('--baudrate', help='Serial baud rate', type=int, default=None)
-@click.option('--bytesize', help='Number of data bits', type=click.Choice(['5', '6', '7', '8']), default=None)
-@click.option('--parity', help='Parity check', type=click.Choice(['none', 'even', 'odd', 'mark', 'space']), default=None)
-@click.option('--stopbits', help='Number of stop bits', type=click.Choice(['1', '1.5', '2']), default=None)
-@click.option('--xonxoff/--no-xonxoff', default=None, help='Enable/disable software XON/XOFF flow control')
-@click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
-@click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
-@click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['unity']), default=None)
-@click.option('--message-timeout', help='Message timeout', type=click.INT, default=None)
-@click.option('--overall-timeout', help='Overall timeout', type=click.INT, default=None)
-def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_runner, message_timeout, overall_timeout):
-    """
-        Connect to UART on a DUT.
-    """
-    if message_timeout is None:
-        message_timeout = math.inf
-    if overall_timeout is None:
-        overall_timeout = math.inf
-
+def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_runner):
     if serial_device is None:
         config = read_config_file()
         if 'LAGER' in config and 'serial_device' in config['LAGER']:
@@ -69,7 +47,33 @@ def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonx
         'test_runner': test_runner,
     }
 
-    resp = session.post(url, json=json_data)
+    return session.post(url, json=json_data)
+
+
+@click.command()
+@click.pass_context
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+@click.option('--serial-device', help='Gateway serial port device path', metavar='path')
+@click.option('--baudrate', help='Serial baud rate', type=int, default=None)
+@click.option('--bytesize', help='Number of data bits', type=click.Choice(['5', '6', '7', '8']), default=None)
+@click.option('--parity', help='Parity check', type=click.Choice(['none', 'even', 'odd', 'mark', 'space']), default=None)
+@click.option('--stopbits', help='Number of stop bits', type=click.Choice(['1', '1.5', '2']), default=None)
+@click.option('--xonxoff/--no-xonxoff', default=None, help='Enable/disable software XON/XOFF flow control')
+@click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
+@click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
+@click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['unity']), default=None)
+@click.option('--message-timeout', help='Message timeout', type=click.INT, default=None)
+@click.option('--overall-timeout', help='Overall timeout', type=click.INT, default=None)
+def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_runner, message_timeout, overall_timeout):
+    """
+        Connect to UART on a DUT.
+    """
+    if message_timeout is None:
+        message_timeout = math.inf
+    if overall_timeout is None:
+        overall_timeout = math.inf
+
+    resp = do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_runner)
     test_run = resp.json()
     job_id = test_run['test_run']['id']
     click.echo('Job id: {}'.format(job_id))

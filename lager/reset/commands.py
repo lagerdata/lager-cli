@@ -4,8 +4,16 @@
     Commands for erasing a DUT
 """
 import click
-from ..context import get_default_gateway, MemoryAddressType
+from ..context import get_default_gateway
 from ..util import stream_output
+
+def do_reset(session, gateway, halt):
+    """
+        Perform the DUT reset
+    """
+    url = 'gateway/{}/reset-duck'.format(gateway)
+    return session.post(url, json={'halt': halt})
+
 
 @click.command()
 @click.pass_context
@@ -17,7 +25,5 @@ def reset(ctx, gateway, halt):
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
-    session = ctx.obj.session
-    url = 'gateway/{}/reset-duck'.format(gateway)
-    resp = session.post(url, json={'halt': halt})
+    resp = do_reset(ctx.obj.session, gateway, halt)
     stream_output(resp)

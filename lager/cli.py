@@ -23,6 +23,7 @@ from .run.commands import run
 from .erase.commands import erase
 from .reset.commands import reset
 from .uart.commands import uart
+from .testrun.commands import testrun
 
 @click.group(invoke_without_command=True)
 @click.pass_context
@@ -55,6 +56,7 @@ cli.add_command(run)
 cli.add_command(erase)
 cli.add_command(reset)
 cli.add_command(uart)
+cli.add_command(testrun)
 
 def setup_context(ctx, debug, colorize):
     """

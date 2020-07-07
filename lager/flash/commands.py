@@ -3,58 +3,30 @@
 
     Commands for flashing a DUT
 """
-import os
-import collections
 import itertools
 import click
 from ..context import get_default_gateway
 from ..util import stream_output
+from ..paramtypes import BinfileType
 
-class HexParamType(click.ParamType):
+def do_flash(session, gateway, hexfile, binfile, preverify, verify, force=False):
     """
-        Hexadecimal integer parameter
+        Perform the actual flash operation
     """
-    name = 'hex'
+    url = 'gateway/{}/flash-duck'.format(gateway)
+    files = list(zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile]))
+    files.extend(
+        zip(itertools.repeat('binfile'), [open(binf.path, 'rb') for binf in binfile])
+    )
+    files.extend(
+        zip(itertools.repeat('binfile_address'), [binf.address for binf in binfile])
+    )
+    files.append(('preverify', preverify))
+    files.append(('verify', verify))
+    files.append(('force', force))
 
-    def convert(self, value, param, ctx):
-        """
-            Parse string reprsentation of a hex integer
-        """
-        try:
-            return int(value, 16)
-        except ValueError:
-            self.fail(f"{value} is not a valid hex integer", param, ctx)
+    return session.post(url, files=files, stream=True)
 
-    def __repr__(self):
-        return 'HEX'
-
-Binfile = collections.namedtuple('Binfile', ['path', 'address'])
-class BinfileType(click.ParamType):
-    """
-        Type to represent a command line argument for a binfile (<path>,<address>)
-    """
-    envvar_list_splitter = os.path.pathsep
-    name = 'binfile'
-
-    def __init__(self, *args, exists=False, **kwargs):
-        self.exists = exists
-        super().__init__(*args, **kwargs)
-
-    def convert(self, value, param, ctx):
-        """
-            Convert binfile param string into useable components
-        """
-        parts = value.rsplit(',', 1)
-        if len(parts) != 2:
-            self.fail(f'{value}. Syntax: --binfile <filename>,<address>', param, ctx)
-        filename, address = parts
-        path = click.Path(exists=self.exists).convert(filename, param, ctx)
-        address = HexParamType().convert(address, param, ctx)
-
-        return Binfile(path=path, address=address)
-
-    def __repr__(self):
-        return 'BINFILE'
 
 @click.command()
 @click.pass_context
@@ -76,23 +48,12 @@ class BinfileType(click.ParamType):
 @click.option('--force', is_flag=True)
 def flash(ctx, gateway, hexfile, binfile, preverify, verify, force):
     """
-        Flash gateway
+        Flash a DUT connected to a gateway with 1 or more bin or hex files
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
 
     session = ctx.obj.session
-    url = 'gateway/{}/flash-duck'.format(gateway)
-    files = list(zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile]))
-    files.extend(
-        zip(itertools.repeat('binfile'), [open(binf.path, 'rb') for binf in binfile])
-    )
-    files.extend(
-        zip(itertools.repeat('binfile_address'), [binf.address for binf in binfile])
-    )
-    files.append(('preverify', preverify))
-    files.append(('verify', verify))
-    files.append(('force', force))
 
-    resp = session.post(url, files=files, stream=True)
+    resp = do_flash(session, gateway, hexfile, binfile, preverify, verify, force)
     stream_output(resp)

@@ -167,28 +167,3 @@ def get_default_gateway(ctx):
             param_type='argument',
         )
     return name
-
-class MemoryAddressType(click.ParamType):
-    """
-        Memory address integer parameter
-    """
-    name = 'memory address'
-
-    def convert(self, value, param, ctx):
-        """
-            Parse string reprsentation of a hex integer
-        """
-        value = value.strip().lower()
-        if value.lower().startswith('0x'):
-            try:
-                return int(value, 16)
-            except ValueError:
-                self.fail(f"{value} is not a valid hex integer", param, ctx)
-
-        try:
-            return int(value, 10)
-        except ValueError:
-            self.fail(f"{value} is not a valid integer", param, ctx)
-
-    def __repr__(self):
-        return 'ADDR'

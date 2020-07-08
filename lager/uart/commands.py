@@ -62,17 +62,14 @@ def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
 @click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['unity']), default=None)
-@click.option('--message-timeout', help='Message timeout', type=click.INT, default=None)
-@click.option('--overall-timeout', help='Overall timeout', type=click.INT, default=None)
+@click.option('--message-timeout', default=math.inf, type=click.FLOAT,
+              help='Max time in seconds to wait between messages from API.')
+@click.option('--overall-timeout', default=math.inf, type=click.FLOAT,
+              help='Cumulative time in seconds to wait for session output.')
 def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_runner, message_timeout, overall_timeout):
     """
         Connect to UART on a DUT.
     """
-    if message_timeout is None:
-        message_timeout = math.inf
-    if overall_timeout is None:
-        overall_timeout = math.inf
-
     resp = do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_runner)
     test_run = resp.json()
     job_id = test_run['test_run']['id']

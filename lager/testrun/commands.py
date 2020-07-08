@@ -25,8 +25,8 @@ from ..status import run_job_output
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
 @click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['unity']), default=None)
-@click.option('--message-timeout', help='Message timeout', type=click.INT, default=None)
-@click.option('--overall-timeout', help='Overall timeout', type=click.INT, default=None)
+@click.option('--message-timeout', help='Message timeout', type=click.FLOAT, default=math.inf)
+@click.option('--overall-timeout', help='Overall timeout', type=click.FLOAT, default=math.inf)
 @click.option(
     '--hexfile',
     multiple=True, type=click.Path(exists=True),
@@ -46,11 +46,6 @@ def testrun(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
     """
         Flash and run test on a DUT connected to a gateway
     """
-    if message_timeout is None:
-        message_timeout = math.inf
-    if overall_timeout is None:
-        overall_timeout = math.inf
-
     if gateway is None:
         gateway = get_default_gateway(ctx)
     session = ctx.obj.session

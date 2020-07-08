@@ -137,8 +137,9 @@ class LagerContext:  # pylint: disable=too-few-public-methods
         headers = [
             (b'authorization', self.session.headers['Authorization'].encode()),
         ]
+        ctx = get_ssl_context()
 
-        return (uri, dict(extra_headers=headers))
+        return (uri, dict(extra_headers=headers, ssl_context=ctx))
 
 def get_default_gateway(ctx):
     """
@@ -175,11 +176,8 @@ def get_ssl_context():
     """
     cafile_path = os.getenv('LAGER_CAFILE_PATH')
     if not cafile_path:
-        """
-            Use default system CA certs
-        """
+        # Use default system CA certs
         return None
-
     ctx = ssl.create_default_context()
     ctx.load_verify_locations(cafile=cafile_path)
     return ctx

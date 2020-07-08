@@ -8,6 +8,7 @@ import logging
 import click
 import trio
 import trio_websocket
+from ..context import get_ssl_context
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,8 @@ async def connection_handler(connection_params, gdb_client_stream):
     sockname = gdb_client_stream.socket.getsockname()
     click.echo(f'Serving gdb client: {sockname}')
     try:
-        async with trio_websocket.open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
+        ctx = get_ssl_context()
+        async with trio_websocket.open_websocket_url(uri, ssl_context=ctx, disconnect_timeout=1, **kwargs) as websocket:
             async with trio.open_nursery() as nursery:
                 nursery.start_soon(send_to_websocket, websocket, gdb_client_stream, nursery)
                 nursery.start_soon(send_to_gdb, websocket, gdb_client_stream, nursery)

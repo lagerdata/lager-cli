@@ -5,6 +5,7 @@
 """
 import os
 import json
+import ssl
 import urllib.parse
 import urllib3
 import requests
@@ -167,3 +168,18 @@ def get_default_gateway(ctx):
             param_type='argument',
         )
     return name
+
+def get_ssl_context():
+    """
+        Get an SSL context, with custom CA cert if necessary
+    """
+    cafile_path = os.getenv('LAGER_CAFILE_PATH')
+    if not cafile_path:
+        """
+            Use default system CA certs
+        """
+        return None
+
+    ctx = ssl.create_default_context()
+    ctx.load_verify_locations(cafile=cafile_path)
+    return ctx

@@ -12,6 +12,7 @@ from . import (
     CLIENT_ID, AUTH_URL, AUDIENCE,
     read_config_file, write_config_file,
 )
+from ..context import LagerContext
 
 SCOPE = 'read:gateway flash:duck offline_access'
 
@@ -83,7 +84,6 @@ def login():
 
     click.echo('Awaiting confirmation... (Could take up to 5 seconds after clicking "Confirm" in your browser)')
     payload = poll_for_token(code_response['device_code'], code_response['interval'])
-    click.secho('Success! You\'re ready to use Lager!', fg='green')
 
     config = read_config_file()
     config['AUTH'] = {
@@ -92,6 +92,19 @@ def login():
         'refresh': payload['refresh_token'],
     }
     write_config_file(config)
+
+    ctx = LagerContext(
+        auth=config['AUTH'],
+        defaults=None,
+        debug=False,
+        style=None
+    )
+
+    session = ctx.session
+    url = 'cli/post-login'
+    session.post(url)
+
+    click.secho('Success! You\'re ready to use Lager!', fg='green')
 
 @click.command()
 def logout():

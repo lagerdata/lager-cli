@@ -3,8 +3,6 @@
 
     Gateway commands
 """
-import itertools
-import json
 import collections
 import os
 import click
@@ -169,7 +167,7 @@ def ensure_running(name, ctx):
 @click.argument('name', required=False)
 @click.option('--host', default='localhost', help='interface for gdbserver to bind. '
               'Use --host \'*\' to bind to all interfaces.')
-@click.option('--port', default=2159, help='Port for gdbserver')
+@click.option('--port', default=3333, help='Port for gdbserver')
 def gdbserver(ctx, name, host, port):
     """
         Run GDB server on gateway. By default binds to localhost, meaning gdb client connections

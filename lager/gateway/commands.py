@@ -9,8 +9,6 @@ import click
 import trio
 import trio_websocket
 from .. import SUPPORTED_DEVICES
-from ..status import run_job_output
-from .tunnel import serve_tunnel
 from ..context import get_default_gateway
 
 @click.group()
@@ -118,30 +116,6 @@ class BinfileType(click.ParamType):
 @gateway.command()
 @click.pass_context
 @click.argument('name', required=False)
-@click.option('--message-timeout', default=5*60,
-              help='Max time in seconds to wait between messages from API.'
-              'This timeout only affects reading output and does not cancel the actual test run if hit.')
-@click.option('--overall-timeout', default=30*60,
-              help='Cumulative time in seconds to wait for session output.'
-              'This timeout only affects reading output and does not cancel the actual test run if hit.')
-def erase(ctx, name, message_timeout, overall_timeout):
-    if name is None:
-        name = get_default_gateway(ctx)
-
-    ensure_running(name, ctx)
-
-    session = ctx.obj.session
-    url = 'gateway/{}/erase-duck'.format(name)
-    resp = session.post(url, stream=True)
-    test_run = resp.json()
-    job_id = test_run['test_run']['id']
-    click.echo('Job id: {}'.format(job_id))
-    connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
-    run_job_output(connection_params, None, message_timeout, overall_timeout, ctx.obj.debug)
-
-@gateway.command()
-@click.pass_context
-@click.argument('name', required=False)
 def jobs(ctx, name):
     """
         Get serial ports attached to gateway
@@ -153,47 +127,6 @@ def jobs(ctx, name):
     url = 'gateway/{}/jobs'.format(name)
     resp = session.get(url)
     print(resp.json())
-
-def ensure_running(name, ctx):
-    session = ctx.obj.session
-    url = 'gateway/{}/status'.format(name)
-    gateway_status = session.get(url).json()
-    if not gateway_status['running']:
-        click.secho('Gateway debugger is not running. Please use `lager connect` to run it', fg='red', err=True)
-        ctx.exit(1)
-
-@gateway.command()
-@click.pass_context
-@click.argument('name', required=False)
-@click.option('--host', default='localhost', help='interface for gdbserver to bind. '
-              'Use --host \'*\' to bind to all interfaces.')
-@click.option('--port', default=3333, help='Port for gdbserver')
-def gdbserver(ctx, name, host, port):
-    """
-        Run GDB server on gateway. By default binds to localhost, meaning gdb client connections
-        must originate from the machine running `lager gdbserver`. If you would like to bind to
-        all interfaces, use --host '*'
-    """
-    if name is None:
-        name = get_default_gateway(ctx)
-
-    ensure_running(name, ctx)
-
-    connection_params = ctx.obj.websocket_connection_params(socktype='gdb-tunnel', gateway_id=name)
-    try:
-        trio.run(serve_tunnel, host, port, connection_params)
-    except PermissionError as exc:
-        if port < 1024:
-            click.secho(f'Permission denied for port {port}. Using a port number less than '
-                        '1024 typically requires root privileges.', fg='red', err=True)
-        else:
-            click.secho(str(exc), fg='red', err=True)
-        if ctx.obj.debug:
-            raise
-    except OSError as exc:
-        click.secho(f'Could not start gdbserver on port {port}: {exc}', fg='red', err=True)
-        if ctx.obj.debug:
-            raise
 
 @gateway.command()
 @click.pass_context

@@ -24,6 +24,7 @@ from .erase.commands import erase
 from .reset.commands import reset
 from .uart.commands import uart
 from .testrun.commands import testrun
+from .gdbserver.commands import gdbserver
 
 @click.group(invoke_without_command=True)
 @click.pass_context
@@ -57,6 +58,7 @@ cli.add_command(erase)
 cli.add_command(reset)
 cli.add_command(uart)
 cli.add_command(testrun)
+cli.add_command(gdbserver)
 
 def setup_context(ctx, debug, colorize):
     """

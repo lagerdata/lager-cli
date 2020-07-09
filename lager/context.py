@@ -181,3 +181,14 @@ def get_ssl_context():
     ctx = ssl.create_default_context()
     ctx.load_verify_locations(cafile=cafile_path)
     return ctx
+
+def ensure_debugger_running(gateway, ctx):
+    """
+        Ensure debugger is running on a given gateway
+    """
+    session = ctx.obj.session
+    url = 'gateway/{}/status'.format(gateway)
+    gateway_status = session.get(url).json()
+    if not gateway_status['running']:
+        click.secho('Gateway debugger is not running. Please use `lager connect` to run it', fg='red', err=True)
+        ctx.exit(1)

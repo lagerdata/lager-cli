@@ -8,7 +8,6 @@ import logging
 import click
 import trio
 import trio_websocket
-from ..context import get_ssl_context
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@
 import os
 import setuptools
 
-from lager import __version__ as lager_version
+from lager_cli import __version__ as lager_version
 
 def readme():
     path = os.path.dirname(__file__)
@@ -65,7 +65,7 @@ if __name__ == "__main__":
         ''',
         entry_points={
             'console_scripts': [
-                'lager=lager.cli:cli',
+                'lager=lager_cli.cli:cli',
             ],
         }
     )

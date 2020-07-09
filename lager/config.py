@@ -7,7 +7,8 @@ import os
 import configparser
 import click
 
-_LAGER_CONFIG_FILE_NAME = '.lager'
+DEFAULT_CONFIG_FILE_NAME = '.lager'
+_LAGER_CONFIG_FILE_NAME = os.getenv('LAGER_CONFIG_FILE_NAME', DEFAULT_CONFIG_FILE_NAME)
 
 def _get_config_file_path():
     return os.path.join(os.path.expanduser('~'), _LAGER_CONFIG_FILE_NAME)

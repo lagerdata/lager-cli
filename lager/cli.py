@@ -25,6 +25,7 @@ from .reset.commands import reset
 from .uart.commands import uart
 from .testrun.commands import testrun
 from .gdbserver.commands import gdbserver
+from .connect.commands import connect, disconnect
 
 @click.group(invoke_without_command=True)
 @click.pass_context
@@ -59,6 +60,8 @@ cli.add_command(reset)
 cli.add_command(uart)
 cli.add_command(testrun)
 cli.add_command(gdbserver)
+cli.add_command(connect)
+cli.add_command(disconnect)
 
 def setup_context(ctx, debug, colorize):
     """

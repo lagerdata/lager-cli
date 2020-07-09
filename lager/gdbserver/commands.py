@@ -1,3 +1,9 @@
+"""
+    lager.gdbserver.commands
+
+    GDB Server tunnel commands
+"""
+
 import click
 import trio
 from .tunnel import serve_tunnel
@@ -11,9 +17,9 @@ from ..context import get_default_gateway, ensure_debugger_running
 @click.option('--port', default=3333, help='Port for gdbserver')
 def gdbserver(ctx, gateway, host, port):
     """
-        Run GDB server on gateway. By default binds to localhost, meaning gdb client connections
-        must originate from the machine running `lager gdbserver`. If you would like to bind to
-        all interfaces, use --host '*'
+        Establish a proxy to GDB server on gateway. By default binds to localhost, meaning gdb
+        client connections must originate from the machine running `lager gdbserver`. If you would
+        like to bind to all interfaces, use --host '*'
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)

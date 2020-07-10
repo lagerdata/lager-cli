@@ -84,7 +84,7 @@ async def heartbeat(ws, timeout, interval):
         if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
             raise
 
-async def read_from_websocket(websocket, matcher, message_timeout):
+async def read_from_websocket(websocket, matcher, message_timeout, nursery):
     while True:
         try:
             with trio.fail_after(message_timeout):
@@ -98,6 +98,7 @@ async def read_from_websocket(websocket, matcher, message_timeout):
             raise InterMessageTimeout(message_timeout)
         await handle_message(matcher, bson.loads(message))
     matcher.done()
+    nursery.cancel_scope.cancel()
 
 async def display_job_output(connection_params, test_runner, message_timeout, overall_timeout):
     """
@@ -109,8 +110,8 @@ async def display_job_output(connection_params, test_runner, message_timeout, ov
     with trio.fail_after(overall_timeout):
         async with open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
             async with trio.open_nursery() as nursery:
-                nursery.start_soon(heartbeat, websocket, 5, 1)
-                nursery.start_soon(read_from_websocket, websocket, matcher, message_timeout)
+                nursery.start_soon(heartbeat, websocket, 30, 30)
+                nursery.start_soon(read_from_websocket, websocket, matcher, message_timeout, nursery)
     return matcher
 
 def run_job_output(connection_params, test_runner, message_timeout, overall_timeout, debug=False):

@@ -41,8 +41,6 @@ class UnityMatcher:
                 else:
                     click.echo(line)
 
-        # click.echo(data, nl=False)
-
     def done(self):
         pass
 

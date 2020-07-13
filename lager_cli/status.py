@@ -85,20 +85,22 @@ async def heartbeat(ws, timeout, interval):
             raise
 
 async def read_from_websocket(websocket, matcher, message_timeout, nursery):
-    while True:
-        try:
-            with trio.fail_after(message_timeout):
-                try:
-                    message = await websocket.get_message()
-                except trio_websocket.ConnectionClosed as exc:
-                    if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
-                        raise
-                    break
-        except trio.TooSlowError:
-            raise InterMessageTimeout(message_timeout)
-        await handle_message(matcher, bson.loads(message))
-    matcher.done()
-    nursery.cancel_scope.cancel()
+    try:
+        while True:
+            try:
+                with trio.fail_after(message_timeout):
+                    try:
+                        message = await websocket.get_message()
+                    except trio_websocket.ConnectionClosed as exc:
+                        if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
+                            raise
+                        break
+            except trio.TooSlowError:
+                raise InterMessageTimeout(message_timeout)
+            await handle_message(matcher, bson.loads(message))
+    finally:
+        matcher.done()
+        nursery.cancel_scope.cancel()
 
 async def display_job_output(connection_params, test_runner, message_timeout, overall_timeout):
     """

@@ -12,4 +12,5 @@ SUPPORTED_DEVICES = (
     'cc3235sf',
     'cc3220s',
     'atsame70',
+    'efm32',
 )

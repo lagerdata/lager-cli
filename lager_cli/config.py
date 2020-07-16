@@ -10,16 +10,49 @@ import click
 DEFAULT_CONFIG_FILE_NAME = '.lager'
 _LAGER_CONFIG_FILE_NAME = os.getenv('LAGER_CONFIG_FILE_NAME', DEFAULT_CONFIG_FILE_NAME)
 
-def _get_config_file_path():
-    return os.path.join(os.path.expanduser('~'), _LAGER_CONFIG_FILE_NAME)
+DEVENV_SECTION_NAME = 'DEVENV'
 
-def read_config_file():
+
+def _get_global_config_file_path():
+    return make_config_path(os.path.expanduser('~'))
+
+def make_config_path(directory, config_file_name=None):
+    if config_file_name is None:
+        config_file_name = _LAGER_CONFIG_FILE_NAME
+
+    return os.path.join(directory, config_file_name)
+
+def find_devenv_config_path():
+    configs = _find_config_files()
+    if not configs:
+        return None
+    return configs[0]
+
+def _find_config_files():
+    cwd = os.getcwd()
+    cfgs = []
+    global_config_file_path = _get_global_config_file_path()
+    while True:
+        config_path = make_config_path(cwd)
+        if os.path.exists(config_path) and config_path != global_config_file_path:
+            cfgs.append(config_path)
+        parent = os.path.dirname(cwd)
+        if parent == cwd:
+            break
+        cwd = parent
+
+    return cfgs
+
+
+def read_config_file(path=None):
     """
         Read our config file into `config` object
     """
+    if path is None:
+        path = _get_global_config_file_path()
     config = configparser.SafeConfigParser()
     try:
-        with open(_get_config_file_path()) as f:
+        with open(path) as f:
             config.read_file(f)
     except FileNotFoundError:
         pass
@@ -28,13 +61,14 @@ def read_config_file():
         config.add_section('LAGER')
     return config
 
-def write_config_file(config):
+def write_config_file(config, path=None):
     """
         Write out `config` into our config file
     """
-    with open(_get_config_file_path(), 'w') as f:
+    if path is None:
+        path = _get_global_config_file_path()
+    with open(path, 'w') as f:
         config.write(f)
-
 
 def devenv_section(name):
     return f'DEVENV.{name}'
@@ -97,3 +131,11 @@ def all_commands(section):
     return {
         k.split('.', 1)[1]: section[k] for k in section.keys() if k.startswith('cmd.')
     }
+
+def get_devenv_config():
+    config_path = find_devenv_config_path()
+    if config_path is None:
+        click.get_current_context().exit(1)
+    config = read_config_file(config_path)
+    return config_path, config
+

@@ -37,7 +37,7 @@ def _get_default_name():
 
 @devenv.command()
 @click.option('--name', prompt='Development environment name', default=_get_default_name)
-@click.option('--image', prompt='Docker image', default='lager/megaimage')
+@click.option('--image', prompt='Docker image', default='lagerdata/cortexm-devenv')
 @click.option('--source-dir', prompt='Source code directory on host',
               default=os.getcwd, type=existing_dir_type)
 @click.option('--mount-dir', prompt='Source code mount directory in docker container',

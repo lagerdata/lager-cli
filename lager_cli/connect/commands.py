@@ -9,7 +9,7 @@ from ..context import get_default_gateway
 
 @click.command()
 @click.pass_context
-@click.argument('name', required=False)
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.option(
     '--snr',
     help='Serial number of device to connect. Required if multiple DUTs connected to gateway')
@@ -19,16 +19,16 @@ from ..context import get_default_gateway
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
 @click.option('--force', is_flag=True)
 @click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
-def connect(ctx, name, snr, device, interface, transport, speed, force, debugger):
+def connect(ctx, gateway, snr, device, interface, transport, speed, force, debugger):
     """
         Connect your gateway to your DUCK.
     """
-    if name is None:
-        name = get_default_gateway(ctx)
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
 
     # Step one, try to start gdb on gateway
     session = ctx.obj.session
-    url = 'gateway/{}/start-debugger'.format(name)
+    url = 'gateway/{}/start-debugger'.format(gateway)
     files = []
     if snr:
         files.append(('snr', snr))
@@ -45,18 +45,18 @@ def connect(ctx, name, snr, device, interface, transport, speed, force, debugger
 
 @click.command()
 @click.pass_context
-@click.argument('name', required=False)
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
-def disconnect(ctx, name, debugger):
+def disconnect(ctx, gateway, debugger):
     """
         Disconnect your gateway from your DUCK.
     """
-    if name is None:
-        name = get_default_gateway(ctx)
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
 
     # stop debubber
     session = ctx.obj.session
-    url = 'gateway/{}/stop-debugger'.format(name)
+    url = 'gateway/{}/stop-debugger'.format(gateway)
     files = []
     files.append(('debugger', debugger))
 

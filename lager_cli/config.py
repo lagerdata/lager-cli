@@ -17,18 +17,27 @@ def _get_global_config_file_path():
     return make_config_path(os.path.expanduser('~'))
 
 def make_config_path(directory, config_file_name=None):
+    """
+        Make a full path to a lager config file
+    """
     if config_file_name is None:
         config_file_name = _LAGER_CONFIG_FILE_NAME
 
     return os.path.join(directory, config_file_name)
 
 def find_devenv_config_path():
+    """
+        Find a local .lager config, if it exists
+    """
     configs = _find_config_files()
     if not configs:
         return None
     return configs[0]
 
 def _find_config_files():
+    """
+        Search up from current directory for all .lager files
+    """
     cwd = os.getcwd()
     cfgs = []
     global_config_file_path = _get_global_config_file_path()
@@ -70,46 +79,10 @@ def write_config_file(config, path=None):
     with open(path, 'w') as f:
         config.write(f)
 
-def devenv_section(name):
-    return f'DEVENV.{name}'
-
-def find_scoped_devenv(config, scope):
-    scoped_names = get_devenv_names(config, target_source_dir=scope)
-    if not scoped_names:
-        raise click.UsageError(
-            f'No development environments defined for {scope}',
-        )
-    if len(scoped_names) > 1:
-        raise click.UsageError(
-            f'Multiple development environments defined. Please specify one of: {", ".join(scoped_names)} ; using --name.',
-        )
-    return scoped_names[0]
-
-def figure_out_devenv(name):
-    config = read_config_file()
-    if name is None:
-        all_devenvs = get_devenv_names(config)
-        if len(all_devenvs) == 1:
-            name = all_devenvs[0]
-        else:
-            name = find_scoped_devenv(config, os.getcwd())
-
-    section = devenv_section(name)
-    if not config.has_section(section):
-        raise click.UsageError(
-            f'Development environment {name} not defined',
-        )
-    return config, config[section]
-
-def get_devenv_names(config, target_source_dir=None):
-    all_sections = [s for s in config.sections() if s.startswith('DEVENV.')]
-    if target_source_dir and len(all_sections) > 1:
-        all_sections = [
-            s for s in all_sections if target_source_dir.startswith(config.get(s, 'source_dir'))
-        ]
-    return [s.split('.', 1)[1] for s in all_sections]
-
 def add_devenv_command(section, command_name, command, warn):
+    """
+        Add a named command to devenv
+    """
     key = f'cmd.{command_name}'
     if key in section and warn:
         click.echo(f'Command `{command_name}` already exists, overwriting. ', nl=False, err=True)
@@ -126,16 +99,20 @@ def remove_devenv_command(section, command_name):
         click.get_current_context().exit(1)
     del section[key]
 
-
 def all_commands(section):
+    """
+        Get a map of command name -> command for all commands in the section
+    """
     return {
         k.split('.', 1)[1]: section[k] for k in section.keys() if k.startswith('cmd.')
     }
 
 def get_devenv_config():
+    """
+        Return a path and config file for devenv
+    """
     config_path = find_devenv_config_path()
     if config_path is None:
         click.get_current_context().exit(1)
     config = read_config_file(config_path)
     return config_path, config
-

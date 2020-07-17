@@ -25,7 +25,7 @@ def poll_for_token(device_code, interval):
         'device_code': device_code,
         'client_id': get_client_id(),
     }
-    token_url = '{}oauth/token'.format(get_auth_url())
+    token_url = '{}/oauth/token'.format(get_auth_url())
     while True:
         resp = requests.post(token_url, data=data)
         if resp.status_code == 200:
@@ -61,7 +61,7 @@ def login():
         'scope': SCOPE,
         'client_id': get_client_id(),
     }
-    code_url = '{}oauth/device/code'.format(get_auth_url())
+    code_url = '{}/oauth/device/code'.format(get_auth_url())
     response = requests.post(code_url, data=data)
     response.raise_for_status()
 

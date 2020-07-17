@@ -13,7 +13,7 @@ from ..config import read_config_file, write_config_file
 
 _DEFAULT_CLIENT_ID = 'Ev4qdcEYIrj4TJLJhJGhhKI9wqWbT7IE'
 _DEFAULT_AUDIENCE = 'https://lagerdata.com/gateway'
-_DEFAULT_AUTH_URL = 'https://lagerdata.auth0.com/'
+_DEFAULT_AUTH_URL = 'https://lagerdata.auth0.com'
 
 _JWK_PATH = '.well-known/jwks.json'
 
@@ -45,7 +45,7 @@ def _refresh(refresh_token):
         'client_id': get_client_id(),
         'refresh_token': refresh_token,
     }
-    token_url = '{}oauth/token'.format(get_auth_url())
+    token_url = '{}/oauth/token'.format(get_auth_url())
     resp = requests.post(token_url, data=data)
     resp.raise_for_status()
     return resp.json()

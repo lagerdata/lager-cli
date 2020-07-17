@@ -36,11 +36,11 @@ existing_dir_type = click.Path(
 
 @devenv.command()
 @click.pass_context
-@click.option('--image', prompt='Docker image', default='lagerdata/cortexm-devenv')
+@click.option('--image', prompt='Docker image', default='lagerdata/cortexm-devenv', show_default=True)
 @click.option('--mount-dir', prompt='Source code mount directory in docker container',
-              default='/app')
+              default='/app', show_default=True)
 @click.option('--shell', prompt='Path to shell executable in docker image',
-              default='/bin/bash')
+              default='/bin/bash', show_default=True)
 def create(ctx, image, mount_dir, shell):
     """
         Create a development environment
@@ -100,7 +100,7 @@ def delete():
 @devenv.command()
 @click.argument('command_name')
 @click.argument('command', required=False)
-@click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command. Default True')
+@click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command. Default True', show_default=True)
 def add_command(command_name, command, warn):
     """
         Add COMMAND to devenv with the name COMMAND_NAME

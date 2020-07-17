@@ -14,9 +14,9 @@ from ..context import get_default_gateway
     '--snr',
     help='Serial number of device to connect. Required if multiple DUTs connected to gateway')
 @click.option('--device', help='Target device type', type=click.Choice(SUPPORTED_DEVICES), required=True)
-@click.option('--interface', help='Target interface', type=click.Choice(['ftdi', 'jlink', 'cmsis-dap', 'xds110']), default='ftdi')
-@click.option('--transport', help='Target transport', type=click.Choice(['swd', 'jtag']), default='swd')
-@click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive')
+@click.option('--interface', help='Target interface', type=click.Choice(['ftdi', 'jlink', 'cmsis-dap', 'xds110']), default='ftdi', show_default=True)
+@click.option('--transport', help='Target transport', type=click.Choice(['swd', 'jtag']), default='swd', show_default=True)
+@click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive', show_default=True)
 @click.option('--force', is_flag=True)
 @click.option('--debugger', default='openocd', help='Debugger to use for device flashing')
 def connect(ctx, gateway, snr, device, interface, transport, speed, force, debugger):

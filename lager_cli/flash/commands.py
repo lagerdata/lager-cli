@@ -43,8 +43,8 @@ def do_flash(session, gateway, hexfile, binfile, preverify, verify, force=False)
 @click.option(
     '--preverify/--no-preverify',
     help='If true, only flash target if image differs from current flash contents',
-    default=True)
-@click.option('--verify/--no-verify', help='Verify image successfully flashed', default=True)
+    default=True, show_default=True)
+@click.option('--verify/--no-verify', help='Verify image successfully flashed', default=True, show_default=True)
 @click.option('--force', is_flag=True)
 def flash(ctx, gateway, hexfile, binfile, preverify, verify, force):
     """

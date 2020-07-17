@@ -17,8 +17,8 @@ from ..config import (
 @click.pass_context
 @click.argument('cmd_name', required=False, metavar='COMMAND')
 @click.option('--command', help='Raw commandline to execute in docker container', metavar='\'<cmdline>\'')
-@click.option('--save-as', default=None, help='Alias under which to save command specified with --command', metavar='<alias>')
-@click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command. Default True')
+@click.option('--save-as', default=None, help='Alias under which to save command specified with --command', metavar='<alias>', show_default=True)
+@click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command. Default True', show_default=True)
 def exec_(ctx, cmd_name, command, save_as, warn):
     """
         Execute COMMAND in a docker container. COMMAND is a named command which was previously saved using `--save-as`.

@@ -13,8 +13,8 @@ from ..context import get_default_gateway, ensure_debugger_running
 @click.pass_context
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.option('--host', default='localhost', help='interface for gdbserver to bind. '
-              'Use --host \'*\' to bind to all interfaces.')
-@click.option('--port', default=3333, help='Port for gdbserver')
+              'Use --host \'*\' to bind to all interfaces.', show_default=True)
+@click.option('--port', default=3333, help='Port for gdbserver', show_default=True)
 def gdbserver(ctx, gateway, host, port):
     """
         Establish a proxy to GDB server on gateway. By default binds to localhost, meaning gdb

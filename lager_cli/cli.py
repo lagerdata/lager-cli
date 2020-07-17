@@ -3,6 +3,9 @@
 
     Command line interface entry point
 """
+import os
+import urllib.parse
+
 import traceback
 import click
 
@@ -27,6 +30,11 @@ from .testrun.commands import testrun
 from .gdbserver.commands import gdbserver
 from .connect.commands import connect, disconnect
 
+def _decode_environment():
+    for key in os.environ:
+        if key.startswith('LAGER_'):
+            os.environ[key] = urllib.parse.unquote(os.environ[key])
+
 @click.group(invoke_without_command=True)
 @click.pass_context
 @click.option('--version', 'see_version', is_flag=True, help='See package version')
@@ -36,6 +44,9 @@ def cli(ctx=None, see_version=None, debug=False, colorize=False):
     """
         Lager CLI
     """
+    if os.getenv('LAGER_DECODE_ENV'):
+        _decode_environment()
+
     if see_version:
         click.echo(__version__)
         click.get_current_context().exit(0)

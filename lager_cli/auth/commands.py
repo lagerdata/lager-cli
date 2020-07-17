@@ -9,7 +9,7 @@ import webbrowser
 import requests
 import click
 from . import (
-    CLIENT_ID, AUTH_URL, AUDIENCE,
+    get_client_id, get_auth_url, get_audience,
     read_config_file, write_config_file,
 )
 from ..context import LagerContext
@@ -23,9 +23,9 @@ def poll_for_token(device_code, interval):
     data = {
         'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
         'device_code': device_code,
-        'client_id': CLIENT_ID,
+        'client_id': get_client_id(),
     }
-    token_url = '{}oauth/token'.format(AUTH_URL)
+    token_url = '{}oauth/token'.format(get_auth_url())
     while True:
         resp = requests.post(token_url, data=data)
         if resp.status_code == 200:
@@ -57,11 +57,11 @@ def login():
         has_browser = False
 
     data = {
-        'audience': AUDIENCE,
+        'audience': get_audience(),
         'scope': SCOPE,
-        'client_id': CLIENT_ID,
+        'client_id': get_client_id(),
     }
-    code_url = '{}oauth/device/code'.format(AUTH_URL)
+    code_url = '{}oauth/device/code'.format(get_auth_url())
     response = requests.post(code_url, data=data)
     response.raise_for_status()
 

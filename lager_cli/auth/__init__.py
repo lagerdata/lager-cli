@@ -15,13 +15,18 @@ _DEFAULT_CLIENT_ID = 'Ev4qdcEYIrj4TJLJhJGhhKI9wqWbT7IE'
 _DEFAULT_AUDIENCE = 'https://lagerdata.com/gateway'
 _DEFAULT_AUTH_URL = 'https://lagerdata.auth0.com/'
 
-CLIENT_ID = os.getenv('LAGER_CLIENT_ID', _DEFAULT_CLIENT_ID)
-AUDIENCE = os.getenv('LAGER_AUDIENCE', _DEFAULT_AUDIENCE)
-AUTH_URL = os.getenv('LAGER_AUTH_URL', _DEFAULT_AUTH_URL)
-
 _JWK_PATH = '.well-known/jwks.json'
 
 _EXPIRY_GRACE = datetime.timedelta(hours=1).seconds
+
+def get_auth_url():
+    return os.getenv('LAGER_AUTH_URL', _DEFAULT_AUTH_URL)
+
+def get_client_id():
+    return os.getenv('LAGER_CLIENT_ID', _DEFAULT_CLIENT_ID)
+
+def get_audience():
+    return os.getenv('LAGER_AUDIENCE', _DEFAULT_AUDIENCE)
 
 def _get_jwks(jwk_url):
     resp = requests.get(jwk_url)
@@ -37,10 +42,10 @@ def _is_expired(token):
 def _refresh(refresh_token):
     data = {
         'grant_type': 'refresh_token',
-        'client_id': CLIENT_ID,
+        'client_id': get_client_id(),
         'refresh_token': refresh_token,
     }
-    token_url = '{}oauth/token'.format(AUTH_URL)
+    token_url = '{}oauth/token'.format(get_auth_url())
     resp = requests.post(token_url, data=data)
     resp.raise_for_status()
     return resp.json()

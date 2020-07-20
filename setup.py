@@ -55,6 +55,7 @@ if __name__ == "__main__":
             six == 1.15.0
             sniffio == 1.1.0
             sortedcontainers == 2.2.2
+            tenacity == 6.2.0
             texttable == 1.6.2
             trio == 0.16.0
             trio-websocket == 0.8.0

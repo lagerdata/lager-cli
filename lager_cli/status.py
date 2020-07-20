@@ -9,6 +9,7 @@ import click
 import trio
 import trio_websocket
 from trio_websocket import open_websocket_url
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 import wsproto.frame_protocol as wsframeproto
 import requests
 from .matchers import test_matcher_factory
@@ -102,6 +103,8 @@ async def read_from_websocket(websocket, matcher, message_timeout, nursery):
         matcher.done()
         nursery.cancel_scope.cancel()
 
+
+@retry(reraise=True, sleep=trio.sleep, stop=stop_after_attempt(4), wait=wait_fixed(2), retry=retry_if_exception_type(trio_websocket.ConnectionRejected))
 async def display_job_output(connection_params, test_runner, message_timeout, overall_timeout):
     """
         Display job output from websocket

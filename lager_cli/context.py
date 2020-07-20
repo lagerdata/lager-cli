@@ -3,6 +3,7 @@
 
     CLI context management
 """
+from enum import Enum
 import os
 import json
 import ssl
@@ -192,3 +193,19 @@ def ensure_debugger_running(gateway, ctx):
     if not gateway_status['running']:
         click.secho('Gateway debugger is not running. Please use `lager connect` to run it', fg='red', err=True)
         ctx.exit(1)
+
+class CIEnvironment(Enum):
+    """
+        Enum representing supported CI system
+    """
+    HOST = 'host'
+    DRONE = 'drone'
+
+def get_ci_environment():
+    """
+        Determine what CI environment, if any, we are running in
+    """
+
+    if os.getenv('DRONE') == 'true':
+        return CIEnvironment.DRONE
+    return CIEnvironment.HOST

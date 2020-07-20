@@ -12,6 +12,40 @@ from ..config import (
     get_devenv_config,
     DEVENV_SECTION_NAME,
 )
+from ..context import get_ci_environment, CIEnvironment
+
+def _run_command_host(section, path, cmd_to_run):
+    image = section.get('image')
+    source_dir = os.path.dirname(path)
+    mount_dir = section.get('mount_dir')
+    shell = section.get('shell')
+    proc = subprocess.run([
+        'docker',
+        'run',
+        '-it',
+        '--rm',
+        '-v',
+        f'{source_dir}:{mount_dir}',
+        image,
+        shell,
+        '-c',
+        cmd_to_run
+    ], check=False)
+    return proc.returncode
+
+def _run_command_drone(section, cmd_to_run):
+    shell = section.get('shell')
+    proc = subprocess.run([shell, '-c', cmd_to_run], check=False)
+    return proc.returncode
+
+def _run_command(section, path, cmd_to_run):
+    ci_env = get_ci_environment()
+    if ci_env == CIEnvironment.DRONE:
+        return _run_command_drone(section, cmd_to_run)
+    if ci_env == CIEnvironment.HOST:
+        return _run_command_host(section, path, cmd_to_run)
+    raise ValueError(f'Unknown CI environment {ci_env}')
+
 
 @click.command(name='exec')
 @click.pass_context
@@ -50,20 +84,5 @@ def exec_(ctx, cmd_name, command, save_as, warn):
             add_devenv_command(section, save_as, cmd_to_run, warn)
             write_config_file(config, path)
 
-    image = section.get('image')
-    source_dir = os.path.dirname(path)
-    mount_dir = section.get('mount_dir')
-    shell = section.get('shell')
-    proc = subprocess.run([
-        'docker',
-        'run',
-        '-it',
-        '--rm',
-        '-v',
-        f'{source_dir}:{mount_dir}',
-        image,
-        shell,
-        '-c',
-        cmd_to_run
-    ], check=False)
-    ctx.exit(proc.returncode)
+    returncode = _run_command(section, path, cmd_to_run)
+    ctx.exit(returncode)

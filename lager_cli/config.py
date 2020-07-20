@@ -113,6 +113,7 @@ def get_devenv_config():
     """
     config_path = find_devenv_config_path()
     if config_path is None:
+        click.echo(f'Could not find {_LAGER_CONFIG_FILE_NAME} in {os.getcwd()} or any parent directories', err=True)
         click.get_current_context().exit(1)
     config = read_config_file(config_path)
     return config_path, config

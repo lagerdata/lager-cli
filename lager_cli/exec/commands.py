@@ -59,12 +59,12 @@ def exec_(ctx, cmd_name, command, save_as, warn):
         If COMMAND is not provided, execute the command specified by --command. If --save-as is also provided,
         save the command under that name for later use with COMMAND
     """
-    path, config = get_devenv_config()
-    section = config[DEVENV_SECTION_NAME]
-
     if not cmd_name and not command:
         click.echo(exec_.get_help(ctx))
         ctx.exit(0)
+
+    path, config = get_devenv_config()
+    section = config[DEVENV_SECTION_NAME]
 
     if cmd_name and command:
         raise click.UsageError(

@@ -139,3 +139,15 @@ def status(ctx, gateway):
     if logfile:
         click.echo('---- Logs ----')
         click.echo(logfile)
+
+
+@_gateway.command()
+@click.pass_context
+@click.option('--gateway', required=False, help='ID of gateway to rename')
+@click.option('--to', required=True, help='New name for gateway')
+def rename(ctx, gateway, to):
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
+
+    session = ctx.obj.session
+    session.rename_gateway(gateway, to)

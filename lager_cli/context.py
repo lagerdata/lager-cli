@@ -187,6 +187,12 @@ class LagerSession(BaseUrlSession):
         }
         return self.post(url, json=json_data)
 
+    def rename_gateway(self, gateway, new_name):
+        """
+            Rename a gateway
+        """
+        url = 'gateway/{}/rename'.format(quote(gateway))
+        return self.post(url, json={'name': new_name})
 
 
 class LagerContext:  # pylint: disable=too-few-public-methods

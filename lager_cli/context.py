@@ -35,7 +35,7 @@ OPENOCD_ERROR_CODES = set((
 ))
 
 def quote(gateway):
-    return urllib.parse.quote(gateway, safe='')
+    return urllib.parse.quote(str(gateway), safe='')
 
 class LagerSession(BaseUrlSession):
     """

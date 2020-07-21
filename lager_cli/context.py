@@ -34,6 +34,9 @@ OPENOCD_ERROR_CODES = set((
     'openocd_start_failed',
 ))
 
+def quote(gateway):
+    return urllib.parse.quote(gateway, safe='')
+
 class LagerSession(BaseUrlSession):
     """
         requests session wrapper
@@ -99,56 +102,56 @@ class LagerSession(BaseUrlSession):
         """
             Start the debugger on the gateway
         """
-        url = 'gateway/{}/start-debugger'.format(gateway)
+        url = 'gateway/{}/start-debugger'.format(quote(gateway))
         return self.post(url, files=files)
 
     def stop_debugger(self, gateway):
         """
             Stop the debugger on the gateway
         """
-        url = 'gateway/{}/stop-debugger'.format(gateway)
+        url = 'gateway/{}/stop-debugger'.format(quote(gateway))
         return self.post(url)
 
     def erase_dut(self, gateway, addresses):
         """
             Erase DUT connected to gateway
         """
-        url = 'gateway/{}/erase-duck'.format(gateway)
+        url = 'gateway/{}/erase-duck'.format(quote(gateway))
         return self.post(url, json=addresses)
 
     def flash_dut(self, gateway, files):
         """
             Flash DUT connected to gateway
         """
-        url = 'gateway/{}/flash-duck'.format(gateway)
+        url = 'gateway/{}/flash-duck'.format(quote(gateway))
         return self.post(url, files=files, stream=True)
 
     def gateway_hello(self, gateway):
         """
             Say hello to gateway to see if it is connected
         """
-        url = 'gateway/{}/hello'.format(gateway)
+        url = 'gateway/{}/hello'.format(quote(gateway))
         return self.get(url)
 
     def serial_numbers(self, gateway, model):
         """
             Get serial numbers of devices attached to gateway
         """
-        url = 'gateway/{}/serial-numbers'.format(gateway)
+        url = 'gateway/{}/serial-numbers'.format(quote(gateway))
         return self.get(url, params={'model': model})
 
     def serial_ports(self, gateway):
         """
             Get serial port devices attached to gateway
         """
-        url = 'gateway/{}/serial-ports'.format(gateway)
+        url = 'gateway/{}/serial-ports'.format(quote(gateway))
         return self.get(url)
 
     def gateway_status(self, gateway):
         """
             Get debugger status on gateway
         """
-        url = 'gateway/{}/status'.format(gateway)
+        url = 'gateway/{}/status'.format(quote(gateway))
         return self.get(url)
 
     def list_gateways(self):
@@ -162,21 +165,21 @@ class LagerSession(BaseUrlSession):
         """
             Reset the DUT attached to a gateway and optionally halt it
         """
-        url = 'gateway/{}/reset-duck'.format(gateway)
+        url = 'gateway/{}/reset-duck'.format(quote(gateway))
         return self.post(url, json={'halt': halt})
 
     def run_dut(self, gateway):
         """
             Run the DUT attached to a gateway
         """
-        url = 'gateway/{}/run-duck'.format(gateway)
+        url = 'gateway/{}/run-duck'.format(quote(gateway))
         return self.post(url, stream=True)
 
     def uart_gateway(self, gateway, serial_options, test_runner):
         """
             Open a connection to gateway serial port
         """
-        url = 'gateway/{}/uart-duck'.format(gateway)
+        url = 'gateway/{}/uart-duck'.format(quote(gateway))
 
         json_data = {
             'serial_options': serial_options,

@@ -95,6 +95,96 @@ class LagerSession(BaseUrlSession):
             click.secho('Could not connect to Lager API', fg='red', err=True)
             click.get_current_context().exit(1)
 
+    def start_debugger(self, gateway, files):
+        """
+            Start the debugger on the gateway
+        """
+        url = 'gateway/{}/start-debugger'.format(gateway)
+        return self.post(url, files=files)
+
+    def stop_debugger(self, gateway):
+        """
+            Stop the debugger on the gateway
+        """
+        url = 'gateway/{}/stop-debugger'.format(gateway)
+        return self.post(url)
+
+    def erase_dut(self, gateway, addresses):
+        """
+            Erase DUT connected to gateway
+        """
+        url = 'gateway/{}/erase-duck'.format(gateway)
+        return self.post(url, json=addresses)
+
+    def flash_dut(self, gateway, files):
+        """
+            Flash DUT connected to gateway
+        """
+        url = 'gateway/{}/flash-duck'.format(gateway)
+        return self.post(url, files=files, stream=True)
+
+    def gateway_hello(self, gateway):
+        """
+            Say hello to gateway to see if it is connected
+        """
+        url = 'gateway/{}/hello'.format(gateway)
+        return self.get(url)
+
+    def serial_numbers(self, gateway, model):
+        """
+            Get serial numbers of devices attached to gateway
+        """
+        url = 'gateway/{}/serial-numbers'.format(gateway)
+        return self.get(url, params={'model': model})
+
+    def serial_ports(self, gateway):
+        """
+            Get serial port devices attached to gateway
+        """
+        url = 'gateway/{}/serial-ports'.format(gateway)
+        return self.get(url)
+
+    def gateway_status(self, gateway):
+        """
+            Get debugger status on gateway
+        """
+        url = 'gateway/{}/status'.format(gateway)
+        return self.get(url)
+
+    def list_gateways(self):
+        """
+            Get all gateways for logged-in user
+        """
+        url = 'gateway/list'
+        return self.get(url)
+
+    def reset_dut(self, gateway, halt):
+        """
+            Reset the DUT attached to a gateway and optionally halt it
+        """
+        url = 'gateway/{}/reset-duck'.format(gateway)
+        return self.post(url, json={'halt': halt})
+
+    def run_dut(self, gateway):
+        """
+            Run the DUT attached to a gateway
+        """
+        url = 'gateway/{}/run-duck'.format(gateway)
+        return self.post(url, stream=True)
+
+    def uart_gateway(self, gateway, serial_options, test_runner):
+        """
+            Open a connection to gateway serial port
+        """
+        url = 'gateway/{}/uart-duck'.format(gateway)
+
+        json_data = {
+            'serial_options': serial_options,
+            'test_runner': test_runner,
+        }
+        return self.post(url, json=json_data)
+
+
 
 class LagerContext:  # pylint: disable=too-few-public-methods
     """
@@ -150,8 +240,7 @@ def get_default_gateway(ctx):
     name = ctx.obj.default_gateway
     if name is None:
         session = ctx.obj.session
-        url = 'gateway/list'
-        resp = session.get(url)
+        resp = session.list_gateways()
         resp.raise_for_status()
         gateways = resp.json()['gateways']
 
@@ -188,8 +277,7 @@ def ensure_debugger_running(gateway, ctx):
         Ensure debugger is running on a given gateway
     """
     session = ctx.obj.session
-    url = 'gateway/{}/status'.format(gateway)
-    gateway_status = session.get(url).json()
+    gateway_status = session.gateway_status(gateway).json()
     if not gateway_status['running']:
         click.secho('Gateway debugger is not running. Please use `lager connect` to run it', fg='red', err=True)
         ctx.exit(1)

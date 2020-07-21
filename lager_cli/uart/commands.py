@@ -30,8 +30,6 @@ def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
         gateway = get_default_gateway(ctx)
 
     session = ctx.obj.session
-    url = 'gateway/{}/uart-duck'.format(gateway)
-
     serial_options = {
         'device': serial_device,
         'baudrate': baudrate,
@@ -42,12 +40,7 @@ def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
         'rtscts': rtscts,
         'dsrdtr': dsrdtr,
     }
-    json_data = {
-        'serial_options': serial_options,
-        'test_runner': test_runner,
-    }
-
-    return session.post(url, json=json_data)
+    return session.uart_gateway(gateway, serial_options, test_runner)
 
 
 @click.command()

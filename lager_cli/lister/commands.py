@@ -22,9 +22,8 @@ def gateways(ctx):
         List a user's gateways
     """
 
-    url = 'gateway/list'
     session = ctx.obj.session
-    resp = session.get(url)
+    resp = session.list_gateways()
     resp.raise_for_status()
 
     table = Texttable()
@@ -35,7 +34,7 @@ def gateways(ctx):
 
     for gateway in resp.json()['gateways']:
         table.add_row([gateway['name'], gateway['id']])
-    print(table.draw())
+    click.echo(table.draw())
 
 @lister.command()
 def supported_devices():

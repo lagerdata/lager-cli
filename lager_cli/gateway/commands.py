@@ -10,58 +10,55 @@ import trio
 import trio_websocket
 from ..context import get_default_gateway
 
-@click.group()
-def gateway():
+@click.group(name='gateway')
+def _gateway():
     """
         Lager gateway commands
     """
     pass
 
-@gateway.command()
+@_gateway.command()
 @click.pass_context
-@click.argument('name', required=False)
-def hello(ctx, name):
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+def hello(ctx, gateway):
     """
         Say hello to gateway
     """
-    if name is None:
-        name = get_default_gateway(ctx)
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
     session = ctx.obj.session
-    url = 'gateway/{}/hello'.format(name)
-    resp = session.get(url)
+    resp = session.gateway_hello(gateway)
     click.echo(resp.content, nl=False)
 
-@gateway.command()
+@_gateway.command()
 @click.pass_context
-@click.argument('name', required=False)
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.option('--model', required=False)
-def serial_numbers(ctx, name, model):
+def serial_numbers(ctx, gateway, model):
     """
         Get serial numbers of devices attached to gateway
     """
-    if name is None:
-        name = get_default_gateway(ctx)
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
 
     session = ctx.obj.session
-    url = 'gateway/{}/serial-numbers'.format(name)
-    resp = session.get(url, params={'model': model})
+    resp = session.serial_numbers(gateway, model)
     for device in resp.json()['devices']:
         device['serial'] = device['serial'].lstrip('0')
         click.echo('{vendor} {model}: {serial}'.format(**device))
 
-@gateway.command()
+@_gateway.command()
 @click.pass_context
-@click.argument('name', required=False)
-def serial_ports(ctx, name):
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+def serial_ports(ctx, gateway):
     """
         Get serial ports attached to gateway
     """
-    if name is None:
-        name = get_default_gateway(ctx)
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
 
     session = ctx.obj.session
-    url = 'gateway/{}/serial-ports'.format(name)
-    resp = session.get(url)
+    resp = session.serial_ports(gateway)
     style = ctx.obj.style
     for port in resp.json()['serial_ports']:
         click.echo('{} - {}'.format(style(port['device'], fg='green'), port['description']))
@@ -112,36 +109,18 @@ class BinfileType(click.ParamType):
     def __repr__(self):
         return 'BINFILE'
 
-@gateway.command()
+@_gateway.command()
 @click.pass_context
-@click.argument('name', required=False)
-def jobs(ctx, name):
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+def status(ctx, gateway):
     """
-        Get serial ports attached to gateway
+        Get gateway debugger status
     """
-    if name is None:
-        name = get_default_gateway(ctx)
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
 
     session = ctx.obj.session
-    url = 'gateway/{}/jobs'.format(name)
-    resp = session.get(url)
-    print(resp.json())
-
-@gateway.command()
-@click.pass_context
-@click.argument('name', required=False)
-def status(ctx, name):
-    """
-        Disconnect your gateway from your DUCK.
-    """
-    if name is None:
-        name = get_default_gateway(ctx)
-
-    # stop debubber
-    session = ctx.obj.session
-    url = 'gateway/{}/status'.format(name)
-
-    response = session.get(url).json()
+    response = session.gateway_status(gateway).json()
     running = response['running']
     cmdline = response['cmdline']
     logfile = response['logfile']

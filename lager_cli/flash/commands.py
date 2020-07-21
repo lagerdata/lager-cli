@@ -13,7 +13,6 @@ def do_flash(session, gateway, hexfile, binfile, preverify, verify, force=False)
     """
         Perform the actual flash operation
     """
-    url = 'gateway/{}/flash-duck'.format(gateway)
     files = list(zip(itertools.repeat('hexfile'), [open(path, 'rb') for path in hexfile]))
     files.extend(
         zip(itertools.repeat('binfile'), [open(binf.path, 'rb') for binf in binfile])
@@ -25,7 +24,7 @@ def do_flash(session, gateway, hexfile, binfile, preverify, verify, force=False)
     files.append(('verify', verify))
     files.append(('force', force))
 
-    return session.post(url, files=files, stream=True)
+    return session.flash_dut(gateway, files=files)
 
 
 @click.command()

@@ -21,7 +21,6 @@ def erase(ctx, gateway, start_addr, length):
         gateway = get_default_gateway(ctx)
 
     session = ctx.obj.session
-    url = 'gateway/{}/erase-duck'.format(gateway)
     addresses = dict(start_addr=start_addr, length=length)
-    resp = session.post(url, json=addresses)
+    resp = session.erase_dut(gateway, addresses=addresses)
     stream_output(resp)

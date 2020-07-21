@@ -17,8 +17,6 @@ def run(ctx, gateway):
         gateway = get_default_gateway(ctx)
 
     session = ctx.obj.session
-    url = 'gateway/{}/run-duck'.format(gateway)
-
-    resp = session.post(url, stream=True)
-    for chunk in resp.iter_content(chunk_size=8):
+    resp = session.run_dut(gateway)
+    for chunk in resp.iter_content(chunk_size=1):
         click.echo(chunk, nl=False)

@@ -11,9 +11,7 @@ def do_reset(session, gateway, halt):
     """
         Perform the DUT reset
     """
-    url = 'gateway/{}/reset-duck'.format(gateway)
-    return session.post(url, json={'halt': halt})
-
+    return session.reset_dut(gateway, halt)
 
 @click.command()
 @click.pass_context

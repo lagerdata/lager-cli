@@ -13,7 +13,7 @@ from . import __version__
 from .config import read_config_file
 from .context import LagerContext
 
-from .gateway.commands import gateway
+from .gateway.commands import _gateway
 from .setter.commands import setter
 from .lister.commands import lister
 from .auth import load_auth
@@ -56,7 +56,7 @@ def cli(ctx=None, see_version=None, debug=False, colorize=False):
         if ctx.invoked_subcommand not in ('login', 'logout', 'set', 'devenv', 'exec'):
             setup_context(ctx, debug, colorize)
 
-cli.add_command(gateway)
+cli.add_command(_gateway)
 cli.add_command(setter)
 cli.add_command(lister)
 cli.add_command(login)

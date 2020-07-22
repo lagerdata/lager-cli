@@ -12,7 +12,7 @@ import requests
 from ..config import read_config_file, write_config_file
 
 _DEFAULT_CLIENT_ID = 'Ev4qdcEYIrj4TJLJhJGhhKI9wqWbT7IE'
-_DEFAULT_AUDIENCE = 'https://lagerdata.com/gateway'
+_DEFAULT_AUDIENCE = 'https://app.lagerdata.com/gateway'
 _DEFAULT_AUTH_URL = 'https://auth.lagerdata.com'
 
 _JWK_PATH = '.well-known/jwks.json'

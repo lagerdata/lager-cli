@@ -5,21 +5,31 @@ def test_matcher_factory(test_runner):
         return UnityMatcher
     return EmptyMatcher
 
+def echo_line(line, color):
+    """
+        Try to echo a line with color, otherwise just emit it raw
+    """
+    try:
+        decoded_line = line.decode()
+        click.secho(decoded_line, fg=color)
+    except UnicodeDecodeError:
+        click.echo(line)
+
 class UnityMatcher:
-    summary_separator = '-----------------------'
+    summary_separator = b'-----------------------'
 
     def __init__(self):
-        self.state = ''
+        self.state = b''
         self.separator = None
         self.has_fail = False
         self.in_summary = False
 
     def feed(self, data):
         self.state += data
-        if '\n' not in data:
+        if b'\n' not in data:
             return
 
-        lines = self.state.split('\n')
+        lines = self.state.split(b'\n')
         to_process, remainder = lines[:-1], lines[-1]
         self.state = remainder
         for line in to_process:
@@ -29,15 +39,15 @@ class UnityMatcher:
                 continue
             if self.in_summary:
                 color = 'red' if self.has_fail else 'green'
-                click.secho(line, fg=color)
+                echo_line(line, color)
             else:
-                if ':FAIL' in line:
+                if b':FAIL' in line:
                     self.has_fail = True
-                    click.secho(line, fg='red')
-                elif ':PASS' in line:
-                    click.secho(line, fg='green')
-                elif ':INFO' in line:
-                    click.secho(line, fg='yellow')
+                    echo_line(line, 'red')
+                elif b':PASS' in line:
+                    echo_line(line, 'green')
+                elif b':INFO' in line:
+                    echo_line(line, 'yellow')
                 else:
                     click.echo(line)
 

@@ -39,7 +39,7 @@ async def handle_data_message(matcher, message):
     for item in message:
         entry = item['entry']
         if 'payload' in entry:
-            payload = entry['payload'].decode()
+            payload = entry['payload']
             matcher.feed(payload)
 
 async def handle_message(matcher, message):

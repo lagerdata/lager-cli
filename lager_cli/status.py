@@ -3,6 +3,9 @@
 
     Job status output functions
 """
+import curses
+import threading
+import sys
 from functools import partial
 import bson
 import click
@@ -82,6 +85,8 @@ async def heartbeat(ws, timeout, interval):
                 await ws.ping()
             await trio.sleep(interval)
     except trio_websocket.ConnectionClosed as exc:
+        if exc.reason is None:
+            return
         if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
             raise
 
@@ -93,6 +98,8 @@ async def read_from_websocket(websocket, matcher, message_timeout, nursery):
                     try:
                         message = await websocket.get_message()
                     except trio_websocket.ConnectionClosed as exc:
+                        if exc.reason is None:
+                            return
                         if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
                             raise
                         break
@@ -103,6 +110,38 @@ async def read_from_websocket(websocket, matcher, message_timeout, nursery):
         matcher.done()
         nursery.cancel_scope.cancel()
 
+def thread_function(stdscr, send_channel, trio_token):
+    while True:
+        char = stdscr.getch()
+        if char == -1:
+            trio.from_thread.run(send_channel.send, {'type': 'EOF'}, trio_token=trio_token)
+            break
+        elif char <= 255:
+            trio.from_thread.run(send_channel.send, {'type': 'key', 'value': char}, trio_token=trio_token)
+        else:
+            print(char)
+
+
+async def write_to_websocket(websocket, receive_channel, nursery):
+    try:
+        while True:
+            message = await receive_channel.receive()
+            if message['type'] == 'EOF':
+                await websocket.aclose()
+                return
+
+            if message['type'] == 'key':
+                value = message['value']
+                try:
+                    await websocket.send_message(bytes([value]))
+                except trio_websocket.ConnectionClosed as exc:
+                    if exc.reason is None:
+                        return
+                    if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
+                        raise
+                    return
+    finally:
+        nursery.cancel_scope.cancel()
 
 @retry(reraise=True, sleep=trio.sleep, stop=stop_after_attempt(4), wait=wait_fixed(2), retry=retry_if_exception_type(trio_websocket.ConnectionRejected))
 async def display_job_output(connection_params, test_runner, message_timeout, overall_timeout):
@@ -111,13 +150,28 @@ async def display_job_output(connection_params, test_runner, message_timeout, ov
     """
     (uri, kwargs) = connection_params
     match_class = test_matcher_factory(test_runner)
-    matcher = match_class()
-    with trio.fail_after(overall_timeout):
-        async with open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
-            async with trio.open_nursery() as nursery:
-                nursery.start_soon(heartbeat, websocket, 30, 30)
-                nursery.start_soon(read_from_websocket, websocket, matcher, message_timeout, nursery)
-    return matcher
+    try:
+        stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        stdscr.keypad(True)
+        matcher = match_class(stdscr)
+        send_channel, receive_channel = trio.open_memory_channel(0)
+        with trio.fail_after(overall_timeout):
+            async with open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
+                token = trio.lowlevel.current_trio_token()
+                thread = threading.Thread(target=thread_function, args=(stdscr, send_channel, token), daemon=True)
+                thread.start()
+                async with trio.open_nursery() as nursery:
+                    nursery.start_soon(heartbeat, websocket, 30, 30)
+                    nursery.start_soon(read_from_websocket, websocket, matcher, message_timeout, nursery)
+                    nursery.start_soon(write_to_websocket, websocket, receive_channel, nursery)
+        return matcher
+    finally:
+        curses.nocbreak()
+        stdscr.keypad(False)
+        curses.echo()
+        curses.endwin()
 
 def run_job_output(connection_params, test_runner, message_timeout, overall_timeout, debug=False):
     """

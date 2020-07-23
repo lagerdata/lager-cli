@@ -18,11 +18,12 @@ def echo_line(line, color):
 class UnityMatcher:
     summary_separator = b'-----------------------'
 
-    def __init__(self):
+    def __init__(self, stdscr):
         self.state = b''
         self.separator = None
         self.has_fail = False
         self.in_summary = False
+        self.stdscr = stdscr
 
     def feed(self, data):
         self.state += data
@@ -61,11 +62,13 @@ class UnityMatcher:
         return 0
 
 class EmptyMatcher:
-    def __init__(self):
-        pass
+    def __init__(self, stdscr):
+        self.stdscr = stdscr
 
     def feed(self, data):
-        click.echo(data, nl=False)
+        self.stdscr.addstr(data)
+        self.stdscr.refresh()
+        # click.echo(data, nl=False)
 
     def done(self):
         pass

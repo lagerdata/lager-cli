@@ -11,7 +11,7 @@ import datetime
 import requests
 from ..config import read_config_file, write_config_file
 
-_DEFAULT_CLIENT_ID = 'Ev4qdcEYIrj4TJLJhJGhhKI9wqWbT7IE'
+_DEFAULT_CLIENT_ID = 'N2NcC4UplFLlxiIPzDDa5K1PKbTrRVec'
 _DEFAULT_AUDIENCE = 'https://app.lagerdata.com/gateway'
 _DEFAULT_AUTH_URL = 'https://auth.lagerdata.com'
 

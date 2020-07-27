@@ -6,6 +6,7 @@
 import curses
 import threading
 import sys
+import select
 from functools import partial
 import bson
 import click
@@ -110,30 +111,29 @@ async def read_from_websocket(websocket, matcher, message_timeout, nursery):
         matcher.done()
         nursery.cancel_scope.cancel()
 
-def thread_function(stdscr, send_channel, trio_token):
-    while True:
-        char = stdscr.getch()
-        if char == -1:
-            trio.from_thread.run(send_channel.send, {'type': 'EOF'}, trio_token=trio_token)
-            break
-        elif char <= 255:
-            trio.from_thread.run(send_channel.send, {'type': 'key', 'value': char}, trio_token=trio_token)
-        else:
-            print(char)
+def reader_function(io, send_channel, trio_token):
+    try:
+        while True:
+            data = io.read()
+            if data is not None:
+                trio.from_thread.run(send_channel.send, {'type': 'data', 'value': data}, trio_token=trio_token)
+    except EOFError:
+        trio.from_thread.run(send_channel.send, {'type': 'EOF'}, trio_token=trio_token)
 
 
-async def write_to_websocket(websocket, receive_channel, nursery):
+async def write_to_websocket(websocket, receive_channel, eof_timeout, nursery):
     try:
         while True:
             message = await receive_channel.receive()
             if message['type'] == 'EOF':
+                await trio.sleep(eof_timeout)
                 await websocket.aclose()
                 return
 
-            if message['type'] == 'key':
-                value = message['value']
+            if message['type'] == 'data':
+                data = message['value']
                 try:
-                    await websocket.send_message(bytes([value]))
+                    await websocket.send_message(data)
                 except trio_websocket.ConnectionClosed as exc:
                     if exc.reason is None:
                         return
@@ -143,42 +143,108 @@ async def write_to_websocket(websocket, receive_channel, nursery):
     finally:
         nursery.cancel_scope.cancel()
 
+class TTYIO:
+    """
+        Class for doing I/O with a TTY managed by curses
+    """
+    def __init__(self):
+        stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        stdscr.keypad(True)
+        self.stdscr = stdscr
+
+    def shutdown(self):
+        """
+            Restore previous TTY settings
+        """
+        curses.nocbreak()
+        self.stdscr.keypad(False)
+        curses.echo()
+        curses.endwin()
+
+    def output(self, data):
+        """
+            Output some data to the TTY
+        """
+        self.stdscr.addstr(data)
+        self.stdscr.refresh()
+
+    def read(self):
+        """
+            Read a key from the TTY
+        """
+        char = self.stdscr.getch()
+        if char == -1:
+            raise EOFError
+        if char <= 255:
+            return char.to_bytes(1, byteorder='little')
+        return None
+
+class StandardIO:
+    """
+        Class for doing I/O with standard UNIX io streams
+    """
+    def shutdown(self):
+        """
+            No special behavior needed
+        """
+        pass
+
+    def output(self, data):
+        """
+            Send some data to stdout
+        """
+        click.echo(data, nl=False)
+
+    def read(self):
+        """
+            Read some data from stdin
+        """
+        rlist, _wlist, xlist = select.select([sys.stdin], [], [sys.stdin])
+        if rlist:
+            chunk = sys.stdin.buffer.read()
+            if chunk == b'':
+                raise EOFError
+            return chunk
+        if xlist:
+            raise EOFError
+        return None
+
+
 @retry(reraise=True, sleep=trio.sleep, stop=stop_after_attempt(4), wait=wait_fixed(2), retry=retry_if_exception_type(trio_websocket.ConnectionRejected))
-async def display_job_output(connection_params, test_runner, message_timeout, overall_timeout):
+async def display_job_output(connection_params, test_runner, interactive, message_timeout, overall_timeout, eof_timeout):
     """
         Display job output from websocket
     """
     (uri, kwargs) = connection_params
     match_class = test_matcher_factory(test_runner)
+    if interactive:
+        io = TTYIO()
+    else:
+        io = StandardIO()
     try:
-        stdscr = curses.initscr()
-        curses.noecho()
-        curses.cbreak()
-        stdscr.keypad(True)
-        matcher = match_class(stdscr)
+        matcher = match_class(io)
         send_channel, receive_channel = trio.open_memory_channel(0)
         with trio.fail_after(overall_timeout):
             async with open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
                 token = trio.lowlevel.current_trio_token()
-                thread = threading.Thread(target=thread_function, args=(stdscr, send_channel, token), daemon=True)
+                thread = threading.Thread(target=reader_function, args=(io, send_channel, token), daemon=True)
                 thread.start()
                 async with trio.open_nursery() as nursery:
                     nursery.start_soon(heartbeat, websocket, 30, 30)
                     nursery.start_soon(read_from_websocket, websocket, matcher, message_timeout, nursery)
-                    nursery.start_soon(write_to_websocket, websocket, receive_channel, nursery)
+                    nursery.start_soon(write_to_websocket, websocket, receive_channel, eof_timeout, nursery)
         return matcher
     finally:
-        curses.nocbreak()
-        stdscr.keypad(False)
-        curses.echo()
-        curses.endwin()
+        io.shutdown()
 
-def run_job_output(connection_params, test_runner, message_timeout, overall_timeout, debug=False):
+def run_job_output(connection_params, test_runner, interactive, message_timeout, overall_timeout, eof_timeout, debug=False):
     """
         Run async task to get job output from websocket
     """
     try:
-        matcher = trio.run(display_job_output, connection_params, test_runner, message_timeout, overall_timeout)
+        matcher = trio.run(display_job_output, connection_params, test_runner, interactive, message_timeout, overall_timeout, eof_timeout)
         click.get_current_context().exit(matcher.exit_code)
     except trio.TooSlowError:
         suffix = '' if overall_timeout == 1 else 's'

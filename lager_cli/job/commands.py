@@ -28,4 +28,4 @@ def status(ctx, job_id, message_timeout, overall_timeout):
         Get job status
     """
     connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
-    run_job_output(connection_params, None, message_timeout, overall_timeout, ctx.obj.debug)
+    run_job_output(connection_params, None, False, message_timeout, overall_timeout, 0, ctx.obj.debug)

@@ -3,6 +3,7 @@
 
     Commands for DUT UART interaction
 """
+import sys
 import math
 import click
 from ..context import get_default_gateway
@@ -55,17 +56,36 @@ def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
 @click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['unity']), default=None)
+@click.option('--interactive', is_flag=True, help='Run as an interactive TTY session', default=False)
 @click.option('--message-timeout', default=math.inf, type=click.FLOAT,
               help='Max time in seconds to wait between messages from API.')
 @click.option('--overall-timeout', default=math.inf, type=click.FLOAT,
               help='Cumulative time in seconds to wait for session output.')
-def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_runner, message_timeout, overall_timeout):
+@click.option('--eof-timeout', default=0, type=click.FLOAT,
+              help='Time in seconds to wait before closing connection after input EOF received')
+@click.option('--display-job-id', default=False, is_flag=True)
+def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr,
+         test_runner, interactive, message_timeout, overall_timeout, eof_timeout, display_job_id):
     """
         Connect to UART on a DUT.
     """
-    resp = do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_runner)
+    if interactive:
+        if not sys.stdin.isatty():
+            click.echo('stdin is not a tty!', err=True)
+            ctx.exit(1)
+        if not sys.stdout.isatty():
+            click.echo('stdout is not a tty!', err=True)
+            ctx.exit(1)
+
+    resp = do_uart(
+        ctx, gateway, serial_device, baudrate, bytesize, parity,
+        stopbits, xonxoff, rtscts, dsrdtr, test_runner,
+    )
     test_run = resp.json()
     job_id = test_run['test_run']['id']
-    click.echo('Job id: {}'.format(job_id))
+    if display_job_id:
+        click.echo('Job id: {}'.format(job_id), err=True)
+
     connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
-    run_job_output(connection_params, test_runner, message_timeout, overall_timeout, ctx.obj.debug)
+    run_job_output(connection_params, test_runner, interactive, message_timeout, overall_timeout,
+        eof_timeout, ctx.obj.debug)

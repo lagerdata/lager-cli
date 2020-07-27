@@ -25,6 +25,7 @@ from ..status import run_job_output
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
 @click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['unity']), default=None)
+@click.option('--interactive', is_flag=True, help='Run as an interactive TTY session', default=False)
 @click.option('--message-timeout', help='Message timeout', type=click.FLOAT, default=math.inf)
 @click.option('--overall-timeout', help='Overall timeout', type=click.FLOAT, default=math.inf)
 @click.option(
@@ -41,8 +42,10 @@ from ..status import run_job_output
     help='If true, only flash target if image differs from current flash contents',
     default=True)
 @click.option('--verify/--no-verify', help='Verify image successfully flashed', default=True)
+@click.option('--display-job-id', default=False, is_flag=True)
 def testrun(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts,
-            dsrdtr, test_runner, message_timeout, overall_timeout, hexfile, binfile, preverify, verify):
+            dsrdtr, test_runner, interactive, message_timeout, overall_timeout, hexfile, binfile,
+            preverify, verify, display_job_id):
     """
         Flash and run test on a DUT connected to a gateway
     """
@@ -52,7 +55,10 @@ def testrun(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
     resp = do_reset(session, gateway, halt=True)
     stream_output(resp)
 
-    resp = do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr, test_runner)
+    resp = do_uart(
+        ctx, gateway, serial_device, baudrate, bytesize, parity,
+        stopbits, xonxoff, rtscts, dsrdtr, test_runner
+    )
     test_run = resp.json()
 
     resp = do_flash(session, gateway, hexfile, binfile, preverify, verify)
@@ -61,8 +67,12 @@ def testrun(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
     resp = do_reset(ctx.obj.session, gateway, halt=False)
     stream_output(resp)
 
-
     job_id = test_run['test_run']['id']
-    click.echo('Job id: {}'.format(job_id))
+    if display_job_id:
+        click.echo('Job id: {}'.format(job_id), err=True)
+
     connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
-    run_job_output(connection_params, test_runner, message_timeout, overall_timeout, ctx.obj.debug)
+    run_job_output(
+        connection_params, test_runner, interactive, message_timeout,
+        overall_timeout, 0, ctx.obj.debug,
+    )

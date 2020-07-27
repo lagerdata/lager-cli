@@ -3,7 +3,11 @@
 
     Job status output functions
 """
-import curses
+try:
+    _CURSES_IMPORT_FAILED = False
+    import curses
+except (ImportError, ModuleNotFoundError) as exc:
+    _CURSES_IMPORT_FAILED = exc
 import threading
 import sys
 import select
@@ -243,6 +247,11 @@ def run_job_output(connection_params, test_runner, interactive, message_timeout,
     """
         Run async task to get job output from websocket
     """
+    if interactive and _CURSES_IMPORT_FAILED:
+        click.echo(_CURSES_IMPORT_FAILED, err=True)
+        click.echo('Please install curses module before using --interactive')
+        click.get_current_context().exit(1)
+
     try:
         matcher = trio.run(display_job_output, connection_params, test_runner, interactive, message_timeout, overall_timeout, eof_timeout)
         click.get_current_context().exit(matcher.exit_code)

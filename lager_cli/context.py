@@ -14,7 +14,7 @@ import click
 from requests_toolbelt.sessions import BaseUrlSession
 
 _DEFAULT_HOST = 'https://app.lagerdata.com'
-_DEFAULT_WEBSOCKET_HOST = 'wss://ws.lagerdata.com'
+_DEFAULT_WEBSOCKET_HOST = 'wss://app.lagerdata.com'
 
 def print_openocd_error(error):
     """

@@ -7,7 +7,7 @@ import functools
 import logging
 import click
 import trio
-import trio_websocket
+import lager_trio_websocket as trio_websocket
 
 logger = logging.getLogger(__name__)
 

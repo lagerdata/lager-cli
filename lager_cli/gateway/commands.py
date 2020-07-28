@@ -7,7 +7,6 @@ import collections
 import os
 import click
 import trio
-import trio_websocket
 from ..context import get_default_gateway
 
 @click.group(name='gateway')

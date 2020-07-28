@@ -58,9 +58,8 @@ if __name__ == "__main__":
             tenacity == 6.2.0
             texttable == 1.6.2
             trio == 0.16.0
-            trio-websocket == 0.8.0
+            lager-trio-websocket == 0.9.0-dev
             urllib3 == 1.25.9
-            wsaccel == 0.6.2
             wsproto == 0.14.1
             yarl == 1.4.2
         ''',

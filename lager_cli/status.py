@@ -15,8 +15,8 @@ from functools import partial
 import bson
 import click
 import trio
-import trio_websocket
-from trio_websocket import open_websocket_url
+import lager_trio_websocket as trio_websocket
+from lager_trio_websocket import open_websocket_url
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 import wsproto.frame_protocol as wsframeproto
 import requests

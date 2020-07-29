@@ -21,4 +21,5 @@ SUPPORTED_INTERFACES = (
     'cmsis-dap',
     'xds110',
     'stlink',
+    'stlink-dap',
 )

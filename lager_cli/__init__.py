@@ -14,3 +14,11 @@ SUPPORTED_DEVICES = (
     'atsame70',
     'efm32',
 )
+
+SUPPORTED_INTERFACES = (
+    'ftdi',
+    'jlink',
+    'cmsis-dap',
+    'xds110',
+    'stlink',
+)

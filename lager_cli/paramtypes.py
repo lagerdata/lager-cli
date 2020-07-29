@@ -50,6 +50,25 @@ class HexParamType(click.ParamType):
     def __repr__(self):
         return 'HEX'
 
+class VarAssignmentType(click.ParamType):
+    """
+        Hexadecimal integer parameter
+    """
+    name = 'FOO=BAR'
+
+    def convert(self, value, param, ctx):
+        """
+            Parse string reprsentation of a hex integer
+        """
+        parts = value.split('=')
+        if len(parts) != 2:
+            raise ValueError('Invalid assignment')
+
+        return parts
+
+    def __repr__(self):
+        return 'VAR ASSIGNMENT'
+
 Binfile = collections.namedtuple('Binfile', ['path', 'address'])
 class BinfileType(click.ParamType):
     """

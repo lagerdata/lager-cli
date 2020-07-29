@@ -3,9 +3,11 @@
 
     Commands for connecting to / disconnecting from DUT
 """
+import itertools
 import click
 from .. import SUPPORTED_DEVICES, SUPPORTED_INTERFACES
 from ..context import get_default_gateway
+from ..paramtypes import HexParamType, VarAssignmentType
 
 @click.command()
 @click.pass_context
@@ -17,11 +19,16 @@ from ..context import get_default_gateway
 @click.option('--interface', help='Target interface', type=click.Choice(SUPPORTED_INTERFACES), default='ftdi', show_default=True)
 @click.option('--transport', help='Target transport', type=click.Choice(['swd', 'jtag']), default='swd', show_default=True)
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive', show_default=True)
-@click.option('--force', is_flag=True)
-def connect(ctx, gateway, snr, device, interface, transport, speed, force):
+@click.option('--workareasize', help='Set work area size. Useful for STM32 chips.', type=HexParamType(), required=False, default=None)
+@click.option('--set', 'set_', multiple=True, type=VarAssignmentType(), help='Set debugger environment variable FOO to BAR')
+@click.option('--force', is_flag=True, help='Disconnect debugger before reconnecting. If not set, connect will fail if debugger is already connected.')
+def connect(ctx, gateway, snr, device, interface, transport, speed, workareasize, set_, force):
     """
         Connect your gateway to your DUCK.
     """
+    set_ = list(set_)
+    if workareasize:
+        set_.append(['WORKAREASIZE', hex(workareasize)])
     if gateway is None:
         gateway = get_default_gateway(ctx)
 
@@ -34,6 +41,12 @@ def connect(ctx, gateway, snr, device, interface, transport, speed, force):
     files.append(('transport', transport))
     files.append(('speed', speed))
     files.append(('force', force))
+    files.extend(
+        zip(itertools.repeat('varnames'), [name for (name, _value) in set_])
+    )
+    files.extend(
+        zip(itertools.repeat('varvalues'), [value for (_name, value) in set_])
+    )
 
     session = ctx.obj.session
     session.start_debugger(gateway, files=files)

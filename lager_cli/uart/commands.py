@@ -18,7 +18,7 @@ def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
 
     if not serial_device:
         raise click.UsageError(
-            'serial_device required',
+            '--serial-device required',
             ctx=ctx,
         )
 

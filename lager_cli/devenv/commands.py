@@ -36,7 +36,7 @@ existing_dir_type = click.Path(
 
 @devenv.command()
 @click.pass_context
-@click.option('--image', prompt='Docker image', default='lagerdata/cortexm-devenv', show_default=True)
+@click.option('--image', prompt='Docker image', default='lagerdata/devenv-cortexm', show_default=True)
 @click.option('--mount-dir', prompt='Source code mount directory in docker container',
               default='/app', show_default=True)
 @click.option('--shell', prompt='Path to shell executable in docker image',

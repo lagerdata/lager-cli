@@ -53,8 +53,8 @@ def cli(ctx=None, see_version=None, debug=False, colorize=False):
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
     else:
-        if ctx.invoked_subcommand not in ('login', 'logout', 'set', 'devenv', 'exec'):
-            setup_context(ctx, debug, colorize)
+        skip_auth = ctx.invoked_subcommand in ('login', 'logout', 'set', 'devenv', 'exec')
+        setup_context(ctx, debug, colorize, skip_auth)
 
 cli.add_command(_gateway)
 cli.add_command(setter)
@@ -74,22 +74,24 @@ cli.add_command(gdbserver)
 cli.add_command(connect)
 cli.add_command(disconnect)
 
-def setup_context(ctx, debug, colorize):
+def setup_context(ctx, debug, colorize, skip_auth):
     """
         Ensure the user has a valid authorization
     """
-    try:
-        auth = load_auth()
-    except Exception:  # pylint: disable=broad-except
-        trace = traceback.format_exc()
-        click.secho(trace, fg='red')
-        click.echo('Something went wrong. Please run `lager logout` followed by `lager login`')
-        click.echo('For additional assistance please send the above traceback (in red) to support@lagerdata.com')
-        click.get_current_context().exit(0)
+    auth = None
+    if not skip_auth:
+        try:
+            auth = load_auth()
+        except Exception:  # pylint: disable=broad-except
+            trace = traceback.format_exc()
+            click.secho(trace, fg='red')
+            click.echo('Something went wrong. Please run `lager logout` followed by `lager login`')
+            click.echo('For additional assistance please send the above traceback (in red) to support@lagerdata.com')
+            click.get_current_context().exit(0)
 
-    if not auth:
-        click.echo('Please login using `lager login` first')
-        click.get_current_context().exit(0)
+        if not auth:
+            click.echo('Please login using `lager login` first')
+            click.get_current_context().exit(0)
 
     config = read_config_file()
     ctx.obj = LagerContext(

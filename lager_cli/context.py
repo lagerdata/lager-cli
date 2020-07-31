@@ -77,10 +77,11 @@ class LagerSession(BaseUrlSession):
         if not verify:
             urllib3.disable_warnings()
 
-        auth_header = {
-            'Authorization': '{} {}'.format(auth['type'], auth['token'])
-        }
-        self.headers.update(auth_header)
+        if auth:
+            auth_header = {
+                'Authorization': '{} {}'.format(auth['type'], auth['token'])
+            }
+            self.headers.update(auth_header)
         self.verify = verify
         self.hooks['response'].append(LagerSession.handle_errors)
 
@@ -209,7 +210,8 @@ class LagerContext:  # pylint: disable=too-few-public-methods
         self.style = style
         self.ws_host = ws_host
         self.debug = debug
-        self.auth_token = auth['token']
+        if auth:
+            self.auth_token = auth['token']
 
     @property
     def default_gateway(self):

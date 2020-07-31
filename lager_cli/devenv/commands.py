@@ -135,4 +135,5 @@ def commands():
     _, config = get_devenv_config()
     section = config[DEVENV_SECTION_NAME]
     for name, command in all_commands(section).items():
-        click.echo(f'{name}: {command}')
+        click.secho(name, fg='green', nl=False)
+        click.echo(f': {command}')

@@ -246,6 +246,10 @@ def run_job_output(connection_params, test_runner, interactive, message_timeout,
     except trio_websocket.ConnectionRejected as exc:
         if exc.status_code == 404:
             click.secho('Job not found', fg='red', err=True)
+        elif exc.status_code >= 500:
+            click.secho('Internal error in Lager API. '
+                        'Please contact support@lagerdata.com if this persists.',
+                        fg='red', err=True)
         else:
             click.secho('Could not connect to API websocket', fg='red', err=True)
         if debug:
@@ -269,16 +273,6 @@ def run_job_output(connection_params, test_runner, interactive, message_timeout,
             click.get_current_context().exit(1)
     except ConnectionRefusedError:
         click.secho('Lager API websocket connection refused!', fg='red', err=True)
-        if debug:
-            raise
-        click.get_current_context().exit(1)
-    except trio_websocket.ConnectionRejected as exc:
-        if exc.status_code == 404:
-            click.secho('Job not found', fg='red', err=True)
-        elif exc.status_code >= 500:
-            click.secho('Internal error in Lager API. '
-                        'Please contact support@lagerdata.com if this persists.',
-                        fg='red', err=True)
         if debug:
             raise
         click.get_current_context().exit(1)

@@ -21,6 +21,8 @@ async def send_to_websocket(websocket, gdb_client_stream, nursery):
         async with gdb_client_stream:
             async for msg in gdb_client_stream:
                 await websocket.send_message(msg)
+    except trio.BrokenResourceError:
+        pass
     finally:
         nursery.cancel_scope.cancel()
 

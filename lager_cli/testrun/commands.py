@@ -74,5 +74,5 @@ def testrun(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
     connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
     run_job_output(
         connection_params, test_runner, interactive, message_timeout,
-        overall_timeout, 0, ctx.obj.debug,
+        overall_timeout, None, ctx.obj.debug,
     )

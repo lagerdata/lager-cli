@@ -126,26 +126,24 @@ def reader_function(io, send_channel, trio_token):
 
 
 async def write_to_websocket(websocket, receive_channel, eof_timeout, nursery):
-    try:
-        while True:
-            message = await receive_channel.receive()
-            if message['type'] == 'EOF':
+    while True:
+        message = await receive_channel.receive()
+        if message['type'] == 'EOF':
+            if eof_timeout is not None:
                 await trio.sleep(eof_timeout)
                 await websocket.aclose()
-                return
+            return
 
-            if message['type'] == 'data':
-                data = message['value']
-                try:
-                    await websocket.send_message(data)
-                except trio_websocket.ConnectionClosed as exc:
-                    if exc.reason is None:
-                        return
-                    if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
-                        raise
+        if message['type'] == 'data':
+            data = message['value']
+            try:
+                await websocket.send_message(data)
+            except trio_websocket.ConnectionClosed as exc:
+                if exc.reason is None:
                     return
-    finally:
-        nursery.cancel_scope.cancel()
+                if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
+                    raise
+                return
 
 class TTYIO:
     """
@@ -273,11 +271,16 @@ def run_job_output(connection_params, test_runner, interactive, message_timeout,
             click.secho('Error retrieving test run content', fg='red', err=True)
         if debug:
             raise
-    except trio_websocket.HandshakeError as exc:
+    except trio_websocket.ConnectionRejected as exc:
         if exc.status_code == 404:
             click.secho('Job not found', fg='red', err=True)
         else:
             click.secho('Could not connect to API websocket', fg='red', err=True)
+        if debug:
+            raise
+        click.get_current_context().exit(1)
+    except trio_websocket.HandshakeError as exc:
+        click.secho('Could not connect to API websocket', fg='red', err=True)
         if debug:
             raise
         click.get_current_context().exit(1)

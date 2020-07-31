@@ -61,7 +61,7 @@ def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
               help='Max time in seconds to wait between messages from API.')
 @click.option('--overall-timeout', default=math.inf, type=click.FLOAT,
               help='Cumulative time in seconds to wait for session output.')
-@click.option('--eof-timeout', default=0, type=click.FLOAT,
+@click.option('--eof-timeout', default=None, type=click.FLOAT,
               help='Time in seconds to wait before closing connection after input EOF received')
 @click.option('--display-job-id', default=False, is_flag=True)
 def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr,

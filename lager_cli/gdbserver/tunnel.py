@@ -8,6 +8,7 @@ import logging
 import click
 import trio
 import lager_trio_websocket as trio_websocket
+from ..util import heartbeat
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ async def connection_handler(connection_params, gdb_client_stream):
             async with trio.open_nursery() as nursery:
                 nursery.start_soon(send_to_websocket, websocket, gdb_client_stream, nursery)
                 nursery.start_soon(send_to_gdb, websocket, gdb_client_stream, nursery)
+                nursery.start_soon(heartbeat, websocket, 30, 30)
     except Exception as exc:  # pylint: disable=broad-except
         logger.exception('Exception in connection_handler', exc_info=exc)
     finally:

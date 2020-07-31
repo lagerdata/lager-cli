@@ -21,6 +21,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_t
 import wsproto.frame_protocol as wsframeproto
 import requests
 from .matchers import test_matcher_factory
+from .util import heartbeat
 
 def stream_response(response):
     """
@@ -65,35 +66,6 @@ class InterMessageTimeout(Exception):
         Raised if no messages received for ``message_timeout`` seconds
     """
     pass
-
-async def heartbeat(ws, timeout, interval):
-    '''
-    Send periodic pings on WebSocket ``ws``.
-
-    Wait up to ``timeout`` seconds to send a ping and receive a pong. Raises
-    ``TooSlowError`` if the timeout is exceeded. If a pong is received, then
-    wait ``interval`` seconds before sending the next ping.
-
-    This function runs until cancelled.
-
-    :param ws: A WebSocket to send heartbeat pings on.
-    :param float timeout: Timeout in seconds.
-    :param float interval: Interval between receiving pong and sending next
-        ping, in seconds.
-    :raises: ``ConnectionClosed`` if ``ws`` is closed.
-    :raises: ``TooSlowError`` if the timeout expires.
-    :returns: This function runs until cancelled.
-    '''
-    try:
-        while True:
-            with trio.fail_after(timeout):
-                await ws.ping()
-            await trio.sleep(interval)
-    except trio_websocket.ConnectionClosed as exc:
-        if exc.reason is None:
-            return
-        if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
-            raise
 
 async def read_from_websocket(websocket, matcher, message_timeout, nursery):
     try:

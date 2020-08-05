@@ -39,7 +39,7 @@ async def send_to_gdb(websocket, gdb_client_stream, nursery):
         except trio_websocket.ConnectionClosed:
             nursery.cancel_scope.cancel()
 
-async def connection_handler(connection_params, gdb_client_stream):
+async def cloud_connection_handler(connection_params, gdb_client_stream):
     """
         Handle a single connection from a gdb client
     """
@@ -57,15 +57,58 @@ async def connection_handler(connection_params, gdb_client_stream):
     finally:
         click.echo(f'gdb client disconnected: {sockname}')
 
+async def send_to_local_gdb(server_stream, gdb_client_stream, nursery):
+    try:
+        async for data in server_stream:
+            await gdb_client_stream.send_all(data)
+    finally:
+        nursery.cancel_scope.cancel()
 
+async def send_to_local_client(server_stream, gdb_client_stream, nursery):
+    try:
+        async for data in gdb_client_stream:
+            await server_stream.send_all(data)
+    finally:
+        nursery.cancel_scope.cancel()
+
+async def local_connection_handler(remote_host, remote_port, gdb_client_stream):
+    """
+        Handle a single connection from a gdb client
+    """
+    sockname = gdb_client_stream.socket.getsockname()
+    click.echo(f'Serving gdb client: {sockname}')
+    try:
+        async with await trio.open_tcp_stream(remote_host, remote_port) as server_stream:
+            async with trio.open_nursery() as nursery:
+                nursery.start_soon(send_to_local_client, server_stream, gdb_client_stream, nursery)
+                nursery.start_soon(send_to_local_gdb, server_stream, gdb_client_stream, nursery)
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception('Exception in connection_handler', exc_info=exc)
+    finally:
+        click.echo(f'gdb client disconnected: {sockname}')
 
 async def serve_tunnel(host, port, connection_params, *, task_status=trio.TASK_STATUS_IGNORED):
     """
         Start up the server that tunnels traffic to a gdbserver instance running on a gateway
     """
-    # (uri, kwargs) = connection_params
     async with trio.open_nursery() as nursery:
-        handler = functools.partial(connection_handler, connection_params)
+        handler = functools.partial(cloud_connection_handler, connection_params)
+        serve_listeners = functools.partial(trio.serve_tcp, handler, port, host=host)
+
+        server = await nursery.start(serve_listeners)
+        task_status.started(server)
+        click.echo(f'Serving GDB on {host}:{port}. Press Ctrl+C to quit.')
+        try:
+            await trio.sleep_forever()
+        except KeyboardInterrupt:
+            nursery.cancel_scope.cancel()
+
+async def serve_local_tunnel(host, port, remote_host, remote_port, *, task_status=trio.TASK_STATUS_IGNORED):
+    """
+        Start up the server that locally tunnels traffic to a gdbserver instance running on a gateway
+    """
+    async with trio.open_nursery() as nursery:
+        handler = functools.partial(local_connection_handler, remote_host, remote_port)
         serve_listeners = functools.partial(trio.serve_tcp, handler, port, host=host)
 
         server = await nursery.start(serve_listeners)

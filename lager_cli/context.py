@@ -195,6 +195,10 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/rename'.format(quote(gateway))
         return self.post(url, json={'name': new_name})
 
+    def start_local_gdb_tunnel(self, gateway):
+        url = 'gateway/{}/local-gdb'.format(quote(gateway))
+        return self.post(url)
+
 
 class LagerContext:  # pylint: disable=too-few-public-methods
     """

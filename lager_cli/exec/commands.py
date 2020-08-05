@@ -25,18 +25,19 @@ def _run_command_host(section, path, cmd_to_run, extra_args, debug):
     full_command = ' '.join((cmd_to_run, *extra_args))
     if debug:
         click.echo(full_command, err=True)
-    proc = subprocess.run([
-        'docker',
-        'run',
-        '-it',
-        '--rm',
+    env_vars = [var for var in os.environ if var.startswith('LAGER')]
+    env_strings = [f'--env={var}={os.environ[var]}' for var in env_vars]
+    base_command = ['docker', 'run', '-it', '--rm']
+    base_command.extend(env_strings)
+    base_command.extend([
         '-v',
         f'{source_dir}:{mount_dir}',
         image,
         shell,
         '-c',
         full_command
-    ], check=False)
+    ])
+    proc = subprocess.run(base_command, check=False)
     return proc.returncode
 
 def _run_command_drone(section, cmd_to_run, extra_args, debug):

@@ -27,10 +27,8 @@ def _run_gdbserver_cloud(ctx, host, port, gateway):
             raise
 
 def _run_gdbserver_local(ctx, host, port, gateway):
-    session = ctx.obj.session
-    resp = session.start_local_gdb_tunnel(gateway).json()
     try:
-        trio.run(serve_local_tunnel, host, port, resp['host'], int(resp['port']))
+        trio.run(serve_local_tunnel, ctx.obj.session, gateway, host, port)
     except PermissionError as exc:
         if port < 1024:
             click.secho(f'Permission denied for port {port}. Using a port number less than '

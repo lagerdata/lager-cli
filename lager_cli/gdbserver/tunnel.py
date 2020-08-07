@@ -59,19 +59,22 @@ async def cloud_connection_handler(connection_params, gdb_client_stream):
 
 async def send_to_local_client(gateway_stream, gdb_client_stream, nursery):
     # try:
-    async for data in gateway_stream:
-        await gdb_client_stream.send_all(data)
-    print('done send to local client')
-    # finally:
-    #     nursery.cancel_scope.cancel()
+    try:
+        async for data in gateway_stream:
+            await gdb_client_stream.send_all(data)
+        await gdb_client_stream.send_eof()
+    except Exception as exc:
+        logger.exception('send_to_local_client failed: ', exc_info=exc)
+        nursery.cancel_scope.cancel()
 
 async def send_to_local_gateway(gateway_stream, gdb_client_stream, nursery):
-    # try:
-    async for data in gdb_client_stream:
-        await gateway_stream.send_all(data)
-    print('done send to local gateway')
-    # finally:
-    #     nursery.cancel_scope.cancel()
+    try:
+        async for data in gdb_client_stream:
+            await gateway_stream.send_all(data)
+        await gateway_stream.send_eof()
+    except Exception as exc:
+        logger.exception('send_to_local_gateway failed: ', exc_info=exc)
+        nursery.cancel_scope.cancel()
 
 async def local_connection_handler(session, gateway, remote_host, remote_port, gdb_client_stream):
     """

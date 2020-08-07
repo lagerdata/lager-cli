@@ -46,7 +46,8 @@ def poll_for_token(device_code, interval):
 
 
 @click.command()
-def login():
+@click.pass_context
+def login(ctx):
     """
         Log in
     """
@@ -94,6 +95,7 @@ def login():
     write_config_file(config)
 
     ctx = LagerContext(
+        ctx=ctx,
         auth=config['AUTH'],
         defaults=None,
         debug=False,

@@ -77,7 +77,9 @@ async def local_connection_handler(session, gateway, remote_host, remote_port, g
     """
     sockname = gdb_client_stream.socket.getsockname()
     if not remote_host:
-        resp = session.start_local_gdb_tunnel(gateway, False).json()
+        resp = await trio.to_thread.run_sync(session.start_local_gdb_tunnel, gateway, False)
+        resp = resp.json()
+        # resp = session.start_local_gdb_tunnel(gateway, False).json()
         remote_host = resp['host']
         remote_port = int(resp['port'])
     click.echo(f'Serving gdb client: {sockname}')

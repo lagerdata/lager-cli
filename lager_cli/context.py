@@ -4,6 +4,7 @@
     CLI context management
 """
 from enum import Enum
+import functools
 import os
 import json
 import ssl
@@ -43,11 +44,10 @@ class LagerSession(BaseUrlSession):
     """
 
     @staticmethod
-    def handle_errors(r, *args, **kwargs):
+    def handle_errors(ctx, r, *args, **kwargs):
         """
             Handle request errors
         """
-        ctx = click.get_current_context()
         if r.status_code == 404:
             name = ctx.params['gateway'] or ctx.obj.default_gateway
             click.secho('You don\'t have a gateway with id `{}`'.format(name), fg='red', err=True)
@@ -70,7 +70,7 @@ class LagerSession(BaseUrlSession):
 
         r.raise_for_status()
 
-    def __init__(self, auth, *args, **kwargs):
+    def __init__(self, ctx, auth, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._connection_exception = None
         verify = 'NOVERIFY' not in os.environ
@@ -83,7 +83,7 @@ class LagerSession(BaseUrlSession):
             }
             self.headers.update(auth_header)
         self.verify = verify
-        self.hooks['response'].append(LagerSession.handle_errors)
+        self.hooks['response'].append(functools.partial(LagerSession.handle_errors, ctx))
 
 
     def request(self, *args, **kwargs):
@@ -207,12 +207,12 @@ class LagerContext:  # pylint: disable=too-few-public-methods
     """
         Lager Context manager
     """
-    def __init__(self, auth, defaults, debug, style):
+    def __init__(self, ctx, auth, defaults, debug, style):
         host = os.getenv('LAGER_HOST', _DEFAULT_HOST)
         ws_host = os.getenv('LAGER_WS_HOST', _DEFAULT_WEBSOCKET_HOST)
         base_url = '{}{}'.format(host, '/api/v1/')
 
-        self.session = LagerSession(auth, base_url=base_url)
+        self.session = LagerSession(ctx, auth, base_url=base_url)
         self.defaults = defaults
         self.style = style
         self.ws_host = ws_host

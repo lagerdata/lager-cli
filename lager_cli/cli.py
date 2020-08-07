@@ -95,6 +95,7 @@ def setup_context(ctx, debug, colorize, skip_auth):
 
     config = read_config_file()
     ctx.obj = LagerContext(
+        ctx=ctx,
         auth=auth,
         defaults=config['LAGER'],
         debug=debug,

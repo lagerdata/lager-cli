@@ -71,15 +71,16 @@ async def send_to_local_client(server_stream, gdb_client_stream, nursery):
     finally:
         nursery.cancel_scope.cancel()
 
-async def local_connection_handler(session, gateway, fork, gdb_client_stream):
+async def local_connection_handler(session, gateway, remote_host, remote_port, gdb_client_stream):
     """
         Handle a single connection from a gdb client
     """
     sockname = gdb_client_stream.socket.getsockname()
+    if not remote_host:
+        resp = session.start_local_gdb_tunnel(gateway, False).json()
+        remote_host = resp['host']
+        remote_port = int(resp['port'])
     click.echo(f'Serving gdb client: {sockname}')
-    resp = session.start_local_gdb_tunnel(gateway, fork).json()
-    remote_host = resp['host']
-    remote_port = int(resp['port'])
     try:
         async with await trio.open_tcp_stream(remote_host, remote_port) as server_stream:
             async with trio.open_nursery() as nursery:
@@ -110,8 +111,15 @@ async def serve_local_tunnel(session, gateway, host, port, fork, *, task_status=
     """
         Start up the server that locally tunnels traffic to a gdbserver instance running on a gateway
     """
+    remote_host = None
+    remote_port = None
+    if fork:
+        resp = session.start_local_gdb_tunnel(gateway, True).json()
+        remote_host = resp['host']
+        remote_port = int(resp['port'])
+
     async with trio.open_nursery() as nursery:
-        handler = functools.partial(local_connection_handler, session, gateway, fork)
+        handler = functools.partial(local_connection_handler, session, gateway, remote_host, remote_port)
         serve_listeners = functools.partial(trio.serve_tcp, handler, port, host=host)
 
         server = await nursery.start(serve_listeners)

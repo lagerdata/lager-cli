@@ -26,9 +26,9 @@ def _run_gdbserver_cloud(ctx, host, port, gateway):
         if ctx.obj.debug:
             raise
 
-def _run_gdbserver_local(ctx, host, port, gateway):
+def _run_gdbserver_local(ctx, host, port, gateway, fork):
     try:
-        trio.run(serve_local_tunnel, ctx.obj.session, gateway, host, port)
+        trio.run(serve_local_tunnel, ctx.obj.session, gateway, host, port, fork)
     except PermissionError as exc:
         if port < 1024:
             click.secho(f'Permission denied for port {port}. Using a port number less than '
@@ -49,7 +49,8 @@ def _run_gdbserver_local(ctx, host, port, gateway):
               'Use --host \'*\' to bind to all interfaces.', show_default=True)
 @click.option('--port', default=3333, help='Port for gdbserver', show_default=True)
 @click.option('--local', is_flag=True, default=False, help='Connect to gateway via local network', show_default=True)
-def gdbserver(ctx, gateway, host, port, local):
+@click.option('--fork', is_flag=True, default=False, help='Allow forking', show_default=True)
+def gdbserver(ctx, gateway, host, port, local, fork):
     """
         Establish a proxy to GDB server on gateway. By default binds to localhost, meaning gdb
         client connections must originate from the machine running `lager gdbserver`. If you would
@@ -64,6 +65,6 @@ def gdbserver(ctx, gateway, host, port, local):
     ensure_debugger_running(gateway, ctx)
 
     if local:
-        _run_gdbserver_local(ctx, host, port, gateway)
+        _run_gdbserver_local(ctx, host, port, gateway, fork)
     else:
         _run_gdbserver_cloud(ctx, host, port, gateway)

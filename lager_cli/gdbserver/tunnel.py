@@ -57,19 +57,21 @@ async def cloud_connection_handler(connection_params, gdb_client_stream):
     finally:
         click.echo(f'gdb client disconnected: {sockname}')
 
-async def send_to_local_gdb(server_stream, gdb_client_stream, nursery):
-    try:
-        async for data in server_stream:
-            await gdb_client_stream.send_all(data)
-    finally:
-        nursery.cancel_scope.cancel()
+async def send_to_local_client(gateway_stream, gdb_client_stream, nursery):
+    # try:
+    async for data in gateway_stream:
+        await gdb_client_stream.send_all(data)
+    print('done send to local client')
+    # finally:
+    #     nursery.cancel_scope.cancel()
 
-async def send_to_local_client(server_stream, gdb_client_stream, nursery):
-    try:
-        async for data in gdb_client_stream:
-            await server_stream.send_all(data)
-    finally:
-        nursery.cancel_scope.cancel()
+async def send_to_local_gateway(gateway_stream, gdb_client_stream, nursery):
+    # try:
+    async for data in gdb_client_stream:
+        await gateway_stream.send_all(data)
+    print('done send to local gateway')
+    # finally:
+    #     nursery.cancel_scope.cancel()
 
 async def local_connection_handler(session, gateway, remote_host, remote_port, gdb_client_stream):
     """
@@ -84,10 +86,10 @@ async def local_connection_handler(session, gateway, remote_host, remote_port, g
         remote_port = int(resp['port'])
     click.echo(f'Serving gdb client: {sockname}')
     try:
-        async with await trio.open_tcp_stream(remote_host, remote_port) as server_stream:
+        async with await trio.open_tcp_stream(remote_host, remote_port) as gateway_stream:
             async with trio.open_nursery() as nursery:
-                nursery.start_soon(send_to_local_client, server_stream, gdb_client_stream, nursery)
-                nursery.start_soon(send_to_local_gdb, server_stream, gdb_client_stream, nursery)
+                nursery.start_soon(send_to_local_client, gateway_stream, gdb_client_stream, nursery)
+                nursery.start_soon(send_to_local_gateway, gateway_stream, gdb_client_stream, nursery)
     except Exception as exc:  # pylint: disable=broad-except
         logger.exception('Exception in connection_handler', exc_info=exc)
     finally:

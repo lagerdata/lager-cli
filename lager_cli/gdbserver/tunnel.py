@@ -58,11 +58,13 @@ async def cloud_connection_handler(connection_params, gdb_client_stream):
         click.echo(f'gdb client disconnected: {sockname}')
 
 async def send_to_local_client(gateway_stream, gdb_client_stream, nursery):
-    # try:
     try:
         async for data in gateway_stream:
             await gdb_client_stream.send_all(data)
-        await gdb_client_stream.send_eof()
+        try:
+            await gdb_client_stream.send_eof()
+        except trio.BrokenResourceError:
+            pass
     except Exception as exc:
         logger.exception('send_to_local_client failed: ', exc_info=exc)
         nursery.cancel_scope.cancel()
@@ -71,7 +73,10 @@ async def send_to_local_gateway(gateway_stream, gdb_client_stream, nursery):
     try:
         async for data in gdb_client_stream:
             await gateway_stream.send_all(data)
-        await gateway_stream.send_eof()
+        try:
+            await gateway_stream.send_eof()
+        except trio.BrokenResourceError:
+            pass
     except Exception as exc:
         logger.exception('send_to_local_gateway failed: ', exc_info=exc)
         nursery.cancel_scope.cancel()

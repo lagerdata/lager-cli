@@ -18,11 +18,15 @@ def _run_command_host(section, path, cmd_to_run, extra_args, debug):
     """
         Run a command from the host (which means, run it in a docker container)
     """
+    full_command = ' '.join((cmd_to_run, *extra_args)).strip()
+    if full_command.startswith('lager'):
+        proc = subprocess.run(full_command, shell=True, check=False)
+        return proc.returncode
+
     image = section.get('image')
     source_dir = os.path.dirname(path)
     mount_dir = section.get('mount_dir')
     shell = section.get('shell')
-    full_command = ' '.join((cmd_to_run, *extra_args))
     if debug:
         click.echo(full_command, err=True)
     env_vars = [var for var in os.environ if var.startswith('LAGER')]

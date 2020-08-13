@@ -45,7 +45,7 @@ def input_(ctx, gateway, num):
 @gpio.command()
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.argument('num', type=_GPIO_CHOICES)
-@click.argument('value', type=click.IntRange(0, 1))
+@click.argument('value', type=click.Choice(('LOW', 'HIGH')))
 @click.pass_context
 def output(ctx, gateway, num, value):
     """

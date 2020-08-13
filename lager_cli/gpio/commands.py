@@ -19,16 +19,13 @@ _LEVEL_CHOICES = click.Choice(('LOW', 'HIGH'), case_sensitive=False)
 @gpio.command(name='set')
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.argument('gpio_', metavar='GPIO', type=_GPIO_CHOICES)
-@click.argument('type_', metavar='TYPE', type=click.Choice(['IN', 'OUT'], case_sensitive=False))
+@click.argument('type_', type=click.Choice(('IN', 'OUT'), case_sensitive=False))
 @click.pass_context
 def set_(ctx, gateway, gpio_, type_):
     """
         Sets pin GPIO mode to TYPE
 
         GPIO can be 0, 1, 2, or 3
-
-        TYPE can be IN or OUT
-
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)

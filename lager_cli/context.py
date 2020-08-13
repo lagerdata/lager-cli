@@ -209,38 +209,45 @@ class LagerSession(BaseUrlSession):
 
     def gpio_set(self, gateway, gpio, type_):
         """
-            Start the local gdb tunnel on gateway
+            Set a GPIO pin to input or output
         """
         url = 'gateway/{}/gpio/set'.format(quote(gateway))
         return self.post(url, json={'gpio': gpio, 'type': type_})
 
     def gpio_input(self, gateway, gpio):
         """
-            Start the local gdb tunnel on gateway
+            Read from the GPIO pin
         """
         url = 'gateway/{}/gpio/input'.format(quote(gateway))
         return self.post(url, json={'gpio': gpio})
 
     def gpio_output(self, gateway, gpio, level):
         """
-            Start the local gdb tunnel on gateway
+            Write to the GPIO pin
         """
         url = 'gateway/{}/gpio/output'.format(quote(gateway))
         return self.post(url, json={'gpio': gpio, 'level': level})
 
     def gpio_servo(self, gateway, gpio, pulsewidth, stop):
         """
-            Start the local gdb tunnel on gateway
+            Control a servo with GPIO
         """
         url = 'gateway/{}/gpio/servo'.format(quote(gateway))
         return self.post(url, json={'gpio': gpio, 'pulsewidth': pulsewidth, 'stop': stop})
 
     def gpio_trigger(self, gateway, gpio, pulse_length, level):
         """
-            Start the local gdb tunnel on gateway
+            Send a trigger pulse on GPIO
         """
         url = 'gateway/{}/gpio/servo'.format(quote(gateway))
         return self.post(url, json={'gpio': gpio, 'pulse_length': pulse_length, 'level': level})
+
+    def gpio_hardware_pwm(self, gateway, frequency, dutycycle):
+        """
+            Start hardware PWM on gpio
+        """
+        url = 'gateway/{}/gpio/hardware-pwm'.format(quote(gateway))
+        return self.post(url, json={'frequency': frequency, 'dutycycle': dutycycle})
 
 class LagerContext:  # pylint: disable=too-few-public-methods
     """

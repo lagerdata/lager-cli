@@ -221,12 +221,12 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/gpio/input'.format(quote(gateway))
         return self.post(url, json={'gpio': gpio})
 
-    def gpio_output(self, gateway, gpio, value):
+    def gpio_output(self, gateway, gpio, level):
         """
             Start the local gdb tunnel on gateway
         """
         url = 'gateway/{}/gpio/output'.format(quote(gateway))
-        return self.post(url, json={'gpio': gpio, 'value': value})
+        return self.post(url, json={'gpio': gpio, 'level': level})
 
     def gpio_servo(self, gateway, gpio, pulsewidth, stop):
         """
@@ -235,6 +235,12 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/gpio/servo'.format(quote(gateway))
         return self.post(url, json={'gpio': gpio, 'pulsewidth': pulsewidth, 'stop': stop})
 
+    def gpio_trigger(self, gateway, gpio, pulse_length, level):
+        """
+            Start the local gdb tunnel on gateway
+        """
+        url = 'gateway/{}/gpio/servo'.format(quote(gateway))
+        return self.post(url, json={'gpio': gpio, 'pulse_length': pulse_length, 'level': level})
 
 class LagerContext:  # pylint: disable=too-few-public-methods
     """

@@ -22,7 +22,7 @@ _GPIO_CHOICES = click.Choice(('0', '1', '2', '3'))
 @click.pass_context
 def set_(ctx, gateway, num, type_):
     """
-        Set GPIO type (input / output)
+        Sets the GPIO mode (input / output)
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
@@ -36,7 +36,7 @@ def set_(ctx, gateway, num, type_):
 @click.pass_context
 def input_(ctx, gateway, num):
     """
-        Read from specified GPIO line
+        Returns the GPIO level.
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
@@ -46,15 +46,15 @@ def input_(ctx, gateway, num):
 @gpio.command()
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.argument('num', type=_GPIO_CHOICES)
-@click.argument('value', type=click.Choice(('LOW', 'HIGH')))
+@click.argument('level', type=click.Choice(('LOW', 'HIGH')))
 @click.pass_context
-def output(ctx, gateway, num, value):
+def output(ctx, gateway, num, level):
     """
-        Output the specified value to the specified GPIO line
+        Sets the GPIO level.
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
-    ctx.obj.session.gpio_output(gateway, num, value)
+    ctx.obj.session.gpio_output(gateway, num, level)
 
 @gpio.command()
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
@@ -65,7 +65,8 @@ def output(ctx, gateway, num, value):
 def servo(ctx, gateway, num, pulsewidth, stop):
     """
         Starts (--pulsewidth 500-2500) or stops (--stop) servo pulses on the GPIO.
-        The pulsewidths supported by servos varies and should probably be determined by experiment. A value of 1500 should always be safe and represents the mid-point of rotation.
+        The pulsewidths supported by servos varies and should probably be determined by experiment.
+        A value of 1500 should always be safe and represents the mid-point of rotation.
         You can DAMAGE a servo if you command it to move beyond its limits.
     """
     if stop and pulsewidth:
@@ -79,3 +80,18 @@ def servo(ctx, gateway, num, pulsewidth, stop):
     if gateway is None:
         gateway = get_default_gateway(ctx)
     ctx.obj.session.gpio_servo(gateway, num, pulsewidth, stop)
+
+@gpio.command()
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+@click.argument('num', type=_GPIO_CHOICES)
+@click.option('--pulse-length', type=click.INT, help='Pulse length in microseconds', required=True)
+@click.option('--level', type=click.Choice(('LOW', 'HIGH')), help='Pulse level', required=True)
+@click.pass_context
+def trigger(ctx, gateway, num, pulse_length, level):
+    """
+        Send a trigger pulse to a GPIO.
+        The GPIO is set to level for pulse-length microseconds and then reset to not level.
+    """
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
+    ctx.obj.session.gpio_trigger(gateway, num, pulse_length, level)

@@ -239,7 +239,7 @@ class LagerSession(BaseUrlSession):
         """
             Send a trigger pulse on GPIO
         """
-        url = 'gateway/{}/gpio/servo'.format(quote(gateway))
+        url = 'gateway/{}/gpio/trigger'.format(quote(gateway))
         return self.post(url, json={'gpio': gpio, 'pulse_length': pulse_length, 'level': level})
 
     def gpio_hardware_pwm(self, gateway, frequency, dutycycle):
@@ -248,6 +248,13 @@ class LagerSession(BaseUrlSession):
         """
         url = 'gateway/{}/gpio/hardware-pwm'.format(quote(gateway))
         return self.post(url, json={'frequency': frequency, 'dutycycle': dutycycle})
+
+    def gpio_hardware_clock(self, gateway, frequency):
+        """
+            Start hardware clock on gpio
+        """
+        url = 'gateway/{}/gpio/hardware-clock'.format(quote(gateway))
+        return self.post(url, json={'frequency': frequency})
 
 class LagerContext:  # pylint: disable=too-few-public-methods
     """

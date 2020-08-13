@@ -135,4 +135,24 @@ def hardware_pwm(ctx, gateway, frequency, dutycycle):
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
-    print(ctx.obj.session.gpio_hardware_pwm(gateway, frequency, dutycycle).json())
+    ctx.obj.session.gpio_hardware_pwm(gateway, frequency, dutycycle)
+
+
+@gpio.command()
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+@click.argument('frequency', type=click.INT, required=True)
+@click.pass_context
+def hardware_clock(ctx, gateway, frequency):
+    """
+        Starts hardware clock on GPIO line 0 (PWM with 50% duty cycle)
+
+        FREQUENCY can be 0 for off, or an integer between 13,184 and 375,000,000
+
+        Frequencies above 30MHz are unlikely to work.
+    """
+    if frequency != 0 and (frequency < 13184 or frequency > 375_000_000):
+        click.echo('Frequency must be 0 (off) or between 13,184 - 375,000,000')
+        ctx.exit(1)
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
+    ctx.obj.session.gpio_hardware_clock(gateway, frequency)

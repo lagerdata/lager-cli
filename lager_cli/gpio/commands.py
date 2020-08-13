@@ -34,6 +34,9 @@ def set_(ctx, gateway, gpio_, type_, pull):
     if gateway is None:
         gateway = get_default_gateway(ctx)
 
+    if type_ == 'OUT' and pull != 'OFF':
+        click.echo(f'GPIO pin {gpio_} set as output, ignoring --pull', err=True)
+
     ctx.obj.session.gpio_set(gateway, gpio_, type_, pull)
 
 

@@ -207,12 +207,12 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/local-gdb'.format(quote(gateway))
         return self.post(url, json={'fork': fork})
 
-    def gpio_set(self, gateway, gpio, type_):
+    def gpio_set(self, gateway, gpio, type_, pull):
         """
             Set a GPIO pin to input or output
         """
         url = 'gateway/{}/gpio/set'.format(quote(gateway))
-        return self.post(url, json={'gpio': gpio, 'type': type_})
+        return self.post(url, json={'gpio': gpio, 'type': type_, 'pull': pull})
 
     def gpio_input(self, gateway, gpio):
         """

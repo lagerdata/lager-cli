@@ -20,17 +20,21 @@ _LEVEL_CHOICES = click.Choice(('LOW', 'HIGH'), case_sensitive=False)
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.argument('gpio_', metavar='GPIO', type=_GPIO_CHOICES)
 @click.argument('type_', type=click.Choice(('IN', 'OUT'), case_sensitive=False))
+@click.option('--pull', type=click.Choice(('UP', 'DOWN', 'OFF'), case_sensitive=False), default='OFF', show_default=True, help='Sets or clears the internal GPIO pull-up/down resistor.')
 @click.pass_context
-def set_(ctx, gateway, gpio_, type_):
+def set_(ctx, gateway, gpio_, type_, pull):
     """
-        Sets pin GPIO mode to TYPE
+        Sets pin GPIO mode (input/output)
+
+        If type is IN, --pull controls the internal GPIO pull-up/down resistor.
+        Otherwise it has no effect.
 
         GPIO can be 0, 1, 2, or 3
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
 
-    ctx.obj.session.gpio_set(gateway, gpio_, type_)
+    ctx.obj.session.gpio_set(gateway, gpio_, type_, pull)
 
 
 @gpio.command(name='input')

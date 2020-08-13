@@ -228,6 +228,13 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/gpio/output'.format(quote(gateway))
         return self.post(url, json={'gpio': gpio, 'value': value})
 
+    def gpio_servo(self, gateway, gpio, pulsewidth, stop):
+        """
+            Start the local gdb tunnel on gateway
+        """
+        url = 'gateway/{}/gpio/servo'.format(quote(gateway))
+        return self.post(url, json={'gpio': gpio, 'pulsewidth': pulsewidth, 'stop': stop})
+
 
 class LagerContext:  # pylint: disable=too-few-public-methods
     """

@@ -29,6 +29,7 @@ from .uart.commands import uart
 from .testrun.commands import testrun
 from .gdbserver.commands import gdbserver
 from .connect.commands import connect, disconnect
+from .gpio.commands import gpio
 
 def _decode_environment():
     for key in os.environ:
@@ -73,6 +74,7 @@ cli.add_command(testrun)
 cli.add_command(gdbserver)
 cli.add_command(connect)
 cli.add_command(disconnect)
+cli.add_command(gpio)
 
 def setup_context(ctx, debug, colorize, skip_auth):
     """

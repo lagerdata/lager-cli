@@ -48,6 +48,11 @@ class LagerSession(BaseUrlSession):
         """
             Handle request errors
         """
+        try:
+            current_context = click.get_current_context()
+            ctx = current_context
+        except RuntimeError:
+            pass
         if r.status_code == 404:
             name = ctx.params['gateway'] or ctx.obj.default_gateway
             click.secho('You don\'t have a gateway with id `{}`'.format(name), fg='red', err=True)
@@ -201,6 +206,27 @@ class LagerSession(BaseUrlSession):
         """
         url = 'gateway/{}/local-gdb'.format(quote(gateway))
         return self.post(url, json={'fork': fork})
+
+    def gpio_set(self, gateway, gpio, type_):
+        """
+            Start the local gdb tunnel on gateway
+        """
+        url = 'gateway/{}/gpio/set'.format(quote(gateway))
+        return self.post(url, json={'gpio': gpio, 'type': type_})
+
+    def gpio_input(self, gateway, gpio):
+        """
+            Start the local gdb tunnel on gateway
+        """
+        url = 'gateway/{}/gpio/input'.format(quote(gateway))
+        return self.post(url, json={'gpio': gpio})
+
+    def gpio_output(self, gateway, gpio, value):
+        """
+            Start the local gdb tunnel on gateway
+        """
+        url = 'gateway/{}/gpio/output'.format(quote(gateway))
+        return self.post(url, json={'gpio': gpio, 'value': value})
 
 
 class LagerContext:  # pylint: disable=too-few-public-methods

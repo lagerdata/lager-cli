@@ -6,7 +6,6 @@
 import collections
 import os
 import click
-import trio
 from ..context import get_default_gateway
 
 @click.group(name='gateway')

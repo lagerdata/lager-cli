@@ -100,7 +100,7 @@ def servo(ctx, gateway, gpio_, pulsewidth, stop):
 @gpio.command()
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.argument('gpio_', metavar='GPIO', type=_GPIO_CHOICES)
-@click.option('--pulse-length', type=click.INT, help='Pulse length in microseconds', required=True)
+@click.option('--pulse-length', type=click.IntRange(1, 100), help='Pulse length in microseconds (1-100)', required=True)
 @click.option('--level', type=_LEVEL_CHOICES, help='Pulse level', required=True)
 @click.pass_context
 def trigger(ctx, gateway, gpio_, pulse_length, level):

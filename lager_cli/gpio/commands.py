@@ -52,7 +52,8 @@ def input_(ctx, gateway, gpio_):
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
-    ctx.obj.session.gpio_input(gateway, gpio_)
+    result = ctx.obj.session.gpio_input(gateway, gpio_)
+    click.echo(result.json()['level'])
 
 
 @gpio.command()

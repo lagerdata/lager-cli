@@ -5,6 +5,7 @@
 """
 
 import time
+import urllib.parse
 import webbrowser
 import requests
 import click
@@ -25,7 +26,7 @@ def poll_for_token(device_code, interval):
         'device_code': device_code,
         'client_id': get_client_id(),
     }
-    token_url = '{}/oauth/token'.format(get_auth_url())
+    token_url = urllib.parse.urljoin(get_auth_url(), '/oauth/token')
     while True:
         resp = requests.post(token_url, data=data)
         if resp.status_code == 200:
@@ -62,7 +63,7 @@ def login(ctx):
         'scope': SCOPE,
         'client_id': get_client_id(),
     }
-    code_url = '{}/oauth/device/code'.format(get_auth_url())
+    code_url = urllib.parse.urljoin(get_auth_url(), '/oauth/device/code')
     response = requests.post(code_url, data=data)
     response.raise_for_status()
 

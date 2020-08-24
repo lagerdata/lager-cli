@@ -8,6 +8,7 @@ import base64
 import json
 import time
 import datetime
+import urllib.parse
 import requests
 from ..config import read_config_file, write_config_file
 
@@ -45,7 +46,7 @@ def _refresh(refresh_token):
         'client_id': get_client_id(),
         'refresh_token': refresh_token,
     }
-    token_url = '{}/oauth/token'.format(get_auth_url())
+    token_url = urllib.parse.urljoin(get_auth_url(), '/oauth/token')
     resp = requests.post(token_url, data=data)
     resp.raise_for_status()
     return resp.json()

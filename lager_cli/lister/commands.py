@@ -6,6 +6,7 @@
 import click
 from texttable import Texttable
 from .. import SUPPORTED_DEVICES
+from ..config import read_config_file
 
 @click.group(name='list')
 def lister():
@@ -43,3 +44,11 @@ def supported_devices():
     """
     for device in SUPPORTED_DEVICES:
         click.echo(device)
+
+@lister.command()
+def secret_token():
+    """
+        Show the secret token, which can be used within a third-party CI system to auth lager-cli
+    """
+    config = read_config_file()
+    click.echo(config['AUTH']['refresh'])

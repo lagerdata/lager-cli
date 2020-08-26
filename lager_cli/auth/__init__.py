@@ -35,10 +35,13 @@ def _get_jwks(jwk_url):
     return resp.json()
 
 def _is_expired(token):
-    _header, encoded_payload, _sig = token.split('.')
-    padding = '===='  # Auth0 token does not include padding
-    payload = json.loads(base64.b64decode(encoded_payload + padding))
-    return payload['exp'] < time.time() + _EXPIRY_GRACE
+    try:
+        _header, encoded_payload, _sig = token.split('.')
+        padding = '===='  # Auth0 token does not include padding
+        payload = json.loads(base64.b64decode(encoded_payload + padding))
+        return payload['exp'] < time.time() + _EXPIRY_GRACE
+    except ValueError:
+        return True
 
 def _refresh(refresh_token):
     data = {

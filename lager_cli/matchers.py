@@ -1,9 +1,15 @@
 import click
 
 def test_matcher_factory(test_runner):
+    """
+        Return matcher for named test_runner
+    """
     if test_runner == 'unity':
         return UnityMatcher
-    return EmptyMatcher
+    if test_runner is None or test_runner == 'none':
+        return EmptyMatcher
+
+    raise ValueError(f'Unknown test matcher {test_runner}')
 
 def echo_line(line, color):
     """

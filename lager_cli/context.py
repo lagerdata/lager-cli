@@ -187,6 +187,8 @@ class LagerSession(BaseUrlSession):
         """
         url = 'gateway/{}/uart-duck'.format(quote(gateway))
 
+        if test_runner == 'none':
+            test_runner = None
         json_data = {
             'serial_options': serial_options,
             'test_runner': test_runner,

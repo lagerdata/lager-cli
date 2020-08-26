@@ -24,7 +24,7 @@ from ..status import run_job_output
 @click.option('--xonxoff/--no-xonxoff', default=None, help='Enable/disable software XON/XOFF flow control')
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
-@click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['unity']), default=None)
+@click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['none', 'unity']), default='unity')
 @click.option('--interactive', is_flag=True, help='Run as an interactive TTY session', default=False)
 @click.option('--message-timeout', help='Message timeout', type=click.FLOAT, default=math.inf)
 @click.option('--overall-timeout', help='Overall timeout', type=click.FLOAT, default=math.inf)

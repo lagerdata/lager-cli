@@ -21,11 +21,16 @@ from ..paramtypes import HexParamType, VarAssignmentType
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive', show_default=True)
 @click.option('--workareasize', help='Set work area size. Useful for STM32 chips.', type=HexParamType(), required=False, default=None)
 @click.option('--set', 'set_', multiple=True, type=VarAssignmentType(), help='Set debugger environment variable FOO to BAR')
-@click.option('--force', is_flag=True, help='Disconnect debugger before reconnecting. If not set, connect will fail if debugger is already connected.')
-def connect(ctx, gateway, snr, device, interface, transport, speed, workareasize, set_, force):
+@click.option('--force', is_flag=True, default=False, help='Disconnect debugger before reconnecting. If not set, connect will fail if debugger is already connected. Cannot be used with --ignore-if-connected', show_default=True)
+@click.option('--ignore-if-connected', is_flag=True, default=False, help='If debugger is already connected, skip connection attempt and exit with success. Cannot be used with --force', show_default=True)
+def connect(ctx, gateway, snr, device, interface, transport, speed, workareasize, set_, force, ignore_if_connected):
     """
         Connect your gateway to your DUCK.
     """
+    if force and ignore_if_connected:
+        click.secho('Cannot specify --force and --ignore-if-connected', fg='red')
+        ctx.exit(1)
+
     set_ = list(set_)
     if workareasize:
         set_.append(['WORKAREASIZE', hex(workareasize)])
@@ -41,6 +46,7 @@ def connect(ctx, gateway, snr, device, interface, transport, speed, workareasize
     files.append(('transport', transport))
     files.append(('speed', speed))
     files.append(('force', force))
+    files.append(('ignore_if_connected', ignore_if_connected))
     files.extend(
         zip(itertools.repeat('varnames'), [name for (name, _value) in set_])
     )

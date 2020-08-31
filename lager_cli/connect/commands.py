@@ -55,9 +55,11 @@ def connect(ctx, gateway, snr, device, interface, transport, speed, workareasize
     )
 
     session = ctx.obj.session
-    session.start_debugger(gateway, files=files)
-    click.secho('Connected!', fg='green')
-
+    resp = session.start_debugger(gateway, files=files).json()
+    if resp.get('start') == 'ok':
+        click.secho('Connected!', fg='green')
+    elif resp.get('already_running') == 'ok':
+        click.secho('Debugger already connected, ignoring', fg='green')
 
 @click.command()
 @click.pass_context

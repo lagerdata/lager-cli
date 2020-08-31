@@ -310,7 +310,10 @@ def get_default_gateway(ctx):
         Check for a default gateway in config; if not present, check if the user
         only has 1 gateway. If so, use that one.
     """
-    name = ctx.obj.default_gateway
+    name = os.getenv('LAGER_GATEWAY')
+    if name is None:
+        name = ctx.obj.default_gateway
+
     if name is None:
         session = ctx.obj.session
         resp = session.list_gateways()

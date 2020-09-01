@@ -54,7 +54,9 @@ def cli(ctx=None, see_version=None, debug=False, colorize=False):
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
     else:
-        skip_auth = ctx.invoked_subcommand in ('login', 'logout', 'set', 'devenv', 'exec')
+        os_args = click.get_os_args()
+        help_invoked = '--help' in os_args
+        skip_auth = ctx.invoked_subcommand in ('login', 'logout', 'set', 'devenv', 'exec') or help_invoked
         setup_context(ctx, debug, colorize, skip_auth)
 
 cli.add_command(_gateway)

@@ -100,7 +100,7 @@ def delete():
 @devenv.command()
 @click.argument('command_name')
 @click.argument('command', required=False)
-@click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command. Default True', show_default=True)
+@click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command.', show_default=True)
 def add_command(command_name, command, warn):
     """
         Add COMMAND to devenv with the name COMMAND_NAME

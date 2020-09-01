@@ -71,7 +71,7 @@ def _run_command(section, path, cmd_to_run, extra_args, debug):
 @click.argument('extra_args', required=False, nargs=-1, metavar='EXTRA_ARGS')
 @click.option('--command', help='Raw commandline to execute in docker container', metavar='\'<cmdline>\'')
 @click.option('--save-as', default=None, help='Alias under which to save command specified with --command', metavar='<alias>', show_default=True)
-@click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command. Default True', show_default=True)
+@click.option('--warn/--no-warn', default=True, help='Whether to print a warning if overwriting an existing command.', show_default=True)
 def exec_(ctx, cmd_name, extra_args, command, save_as, warn):
     """
         Execute COMMAND in a docker container. COMMAND is a named command which was previously saved using `--save-as`.

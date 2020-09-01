@@ -25,7 +25,7 @@ from ..paramtypes import HexParamType, VarAssignmentType
 @click.option('--ignore-if-connected', is_flag=True, default=False, help='If debugger is already connected, skip connection attempt and exit with success. Cannot be used with --force', show_default=True)
 def connect(ctx, gateway, snr, device, interface, transport, speed, workareasize, set_, force, ignore_if_connected):
     """
-        Connect your gateway to your DUCK.
+        Connect your gateway to your Device Under Test (DUT).
     """
     if force and ignore_if_connected:
         click.secho('Cannot specify --force and --ignore-if-connected', fg='red')
@@ -66,7 +66,7 @@ def connect(ctx, gateway, snr, device, interface, transport, speed, workareasize
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 def disconnect(ctx, gateway):
     """
-        Disconnect your gateway from your DUCK.
+        Disconnect your gateway from your Device Under Test (DUT).
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)

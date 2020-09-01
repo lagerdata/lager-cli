@@ -8,5 +8,6 @@ pyparsing==2.4.7
 pytest==5.4.3
 pytest-trio==0.6.0
 requests-mock==1.8.0
+sphinx-click==2.5.0
 wcwidth==0.2.3
 zipp==3.1.0

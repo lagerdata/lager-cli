@@ -10,10 +10,22 @@ Welcome to lager-cli's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
-.. click:: lager_cli.cli:cli
-   :prog: lager
-   :nested: full
+   connect
+   disconnect
+   auth
+   devenv
+   erase
+   exec
+   flash
+   gateway
+   gdbserver
+   gpio
+   list
+   reset
+   run
+   set
+   testrun
+   uart
 
 Indices and tables
 ==================

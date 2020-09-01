@@ -26,6 +26,11 @@ from ..paramtypes import HexParamType, VarAssignmentType
 def connect(ctx, gateway, snr, device, interface, transport, speed, workareasize, set_, force, ignore_if_connected):
     """
         Connect your gateway to your Device Under Test (DUT).
+
+        Examples
+        --------
+        Connect to an nrf52
+           `lager connect \\-\\-device nrf52`
     """
     if force and ignore_if_connected:
         click.secho('Cannot specify --force and --ignore-if-connected', fg='red')

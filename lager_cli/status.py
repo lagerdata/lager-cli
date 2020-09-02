@@ -24,8 +24,6 @@ import requests
 from .matchers import test_matcher_factory
 from .util import heartbeat
 
-_IS_WINDOWS = platform.system() == 'Windows'
-
 def stream_response(response):
     """
         Stream a ``requests`` response to the terminal
@@ -91,7 +89,7 @@ async def read_from_websocket(websocket, matcher, message_timeout, nursery):
         nursery.cancel_scope.cancel()
 
 def reader_function(io, send_channel, trio_token):
-    if io is None:
+    if platform.system() == 'Windows':
         return
     try:
         while True:
@@ -199,19 +197,16 @@ async def display_job_output(connection_params, test_runner, interactive, messag
     (uri, kwargs) = connection_params
     match_class = test_matcher_factory(test_runner)
     if interactive:
-        io = TTYIO()
+        io_source = TTYIO()
     else:
-        if _IS_WINDOWS:
-            io = None
-        else:
-            io = StandardIO()
+        io_source = StandardIO()
     try:
-        matcher = match_class(io)
+        matcher = match_class(io_source)
         send_channel, receive_channel = trio.open_memory_channel(0)
         with trio.fail_after(overall_timeout):
             async with open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
                 token = trio.lowlevel.current_trio_token()
-                thread = threading.Thread(target=reader_function, args=(io, send_channel, token), daemon=True)
+                thread = threading.Thread(target=reader_function, args=(io_source, send_channel, token), daemon=True)
                 thread.start()
                 async with trio.open_nursery() as nursery:
                     nursery.start_soon(heartbeat, websocket, 30, 30)
@@ -219,8 +214,8 @@ async def display_job_output(connection_params, test_runner, interactive, messag
                     nursery.start_soon(write_to_websocket, websocket, receive_channel, eof_timeout, nursery)
         return matcher
     finally:
-        if io:
-            io.shutdown()
+        if io_source:
+            io_source.shutdown()
 
 def run_job_output(connection_params, test_runner, interactive, message_timeout, overall_timeout, eof_timeout, debug=False):
     """

@@ -1,3 +1,9 @@
+"""
+    lager_cli.util
+
+    Catchall for utility functions
+"""
+import sys
 import click
 import trio
 import lager_trio_websocket as trio_websocket
@@ -9,6 +15,7 @@ def stream_output(response, chunk_size=1):
     """
     for chunk in response.iter_content(chunk_size=chunk_size):
         click.echo(chunk, nl=False)
+        sys.stdout.flush()
 
 async def heartbeat(websocket, timeout, interval):
     '''

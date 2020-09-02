@@ -8,6 +8,7 @@ try:
     import curses
 except (ImportError, ModuleNotFoundError) as exc:
     _CURSES_IMPORT_FAILED = exc
+import platform
 import threading
 import sys
 import select
@@ -22,6 +23,8 @@ import wsproto.frame_protocol as wsframeproto
 import requests
 from .matchers import test_matcher_factory
 from .util import heartbeat
+
+_IS_WINDOWS = platform.system() == 'Windows'
 
 def stream_response(response):
     """
@@ -88,6 +91,8 @@ async def read_from_websocket(websocket, matcher, message_timeout, nursery):
         nursery.cancel_scope.cancel()
 
 def reader_function(io, send_channel, trio_token):
+    if io is None:
+        return
     try:
         while True:
             data = io.read()
@@ -196,7 +201,10 @@ async def display_job_output(connection_params, test_runner, interactive, messag
     if interactive:
         io = TTYIO()
     else:
-        io = StandardIO()
+        if _IS_WINDOWS:
+            io = None
+        else:
+            io = StandardIO()
     try:
         matcher = match_class(io)
         send_channel, receive_channel = trio.open_memory_channel(0)
@@ -211,7 +219,8 @@ async def display_job_output(connection_params, test_runner, interactive, messag
                     nursery.start_soon(write_to_websocket, websocket, receive_channel, eof_timeout, nursery)
         return matcher
     finally:
-        io.shutdown()
+        if io:
+            io.shutdown()
 
 def run_job_output(connection_params, test_runner, interactive, message_timeout, overall_timeout, eof_timeout, debug=False):
     """

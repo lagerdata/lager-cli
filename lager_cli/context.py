@@ -363,13 +363,15 @@ class CIEnvironment(Enum):
         Enum representing supported CI system
     """
     HOST = 'host'
-    DRONE = 'drone'
+    CONTAINER_CI = 'container_ci'
 
 def get_ci_environment():
     """
-        Determine what CI environment, if any, we are running in
+        Determine whether we are running in CI or not
     """
 
-    if os.getenv('DRONE') == 'true':
-        return CIEnvironment.DRONE
+    if os.getenv('CI') == 'true':
+        if os.getenv('DRONE') == 'true' or os.getenv('GITHUB_RUN_ID') or os.getenv('BITBUCKET_BUILD_NUMBER'):
+            return CIEnvironment.CONTAINER_CI
+
     return CIEnvironment.HOST

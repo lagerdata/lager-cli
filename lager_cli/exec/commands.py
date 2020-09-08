@@ -44,10 +44,10 @@ def _run_command_host(section, path, cmd_to_run, extra_args, debug):
     proc = subprocess.run(base_command, check=False)
     return proc.returncode
 
-def _run_command_drone(section, cmd_to_run, extra_args, debug):
+def _run_command_container(section, cmd_to_run, extra_args, debug):
     """
-        Run a command from drone (which means, we're already in a container so
-        directly run it.
+        Run a command directly - assume we are in a container with all necessary software
+        installed already.
     """
     shell = section.get('shell')
     full_command = ' '.join((cmd_to_run, *extra_args))
@@ -58,8 +58,8 @@ def _run_command_drone(section, cmd_to_run, extra_args, debug):
 
 def _run_command(section, path, cmd_to_run, extra_args, debug):
     ci_env = get_ci_environment()
-    if ci_env == CIEnvironment.DRONE:
-        return _run_command_drone(section, cmd_to_run, extra_args, debug)
+    if ci_env == CIEnvironment.CONTAINER_CI:
+        return _run_command_container(section, cmd_to_run, extra_args, debug)
     if ci_env == CIEnvironment.HOST:
         return _run_command_host(section, path, cmd_to_run, extra_args, debug)
     raise ValueError(f'Unknown CI environment {ci_env}')

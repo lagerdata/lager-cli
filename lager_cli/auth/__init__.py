@@ -57,9 +57,17 @@ def _refresh(refresh_token):
 AUTH_TOKEN_KEY = 'LAGER_AUTH_TOKEN'
 REFRESH_TOKEN_KEY = 'LAGER_REFRESH_TOKEN'
 TOKEN_TYPE_KEY = 'LAGER_TOKEN_TYPE'
+SECRET_TOKEN_KEY = 'LAGER_SECRET_TOKEN'
+
 def _load_auth_from_environ(env):
+    if SECRET_TOKEN_KEY in env:
+        return dict(
+            token=env[SECRET_TOKEN_KEY],
+            type='secret',
+        )
+
     if AUTH_TOKEN_KEY in env and TOKEN_TYPE_KEY in env and (
-        env[TOKEN_TYPE_KEY].lower() == 'secret' or REFRESH_TOKEN_KEY in env):
+            env[TOKEN_TYPE_KEY].lower() == 'secret' or REFRESH_TOKEN_KEY in env):
         return dict(
             token=env[AUTH_TOKEN_KEY],
             refresh=env.get(REFRESH_TOKEN_KEY),

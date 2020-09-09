@@ -33,7 +33,8 @@ SUPPORTED_DEVICES = (
     'stm32wbx',
     'stm32wlx',
     'stm32xl',
-    'at91samdxx',
+    'at91samdexx',
+    'at91samdgxx',
 )
 
 SUPPORTED_INTERFACES = (

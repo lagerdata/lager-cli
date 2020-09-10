@@ -12,7 +12,7 @@ from ..context import get_default_gateway, ensure_debugger_running
 def _run_gdbserver_cloud(ctx, host, port, gateway):
     connection_params = ctx.obj.websocket_connection_params(socktype='gdb-tunnel', gateway_id=gateway)
     try:
-        trio.run(serve_tunnel, host, port, connection_params)
+        trio.run(serve_tunnel, host, port, connection_params, 'GDB')
     except PermissionError as exc:
         if port < 1024:
             click.secho(f'Permission denied for port {port}. Using a port number less than '

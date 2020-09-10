@@ -103,7 +103,7 @@ async def local_connection_handler(session, gateway, remote_host, remote_port, g
     finally:
         click.echo(f'gdb client disconnected: {sockname}')
 
-async def serve_tunnel(host, port, connection_params, *, task_status=trio.TASK_STATUS_IGNORED):
+async def serve_tunnel(host, port, connection_params, name, *, task_status=trio.TASK_STATUS_IGNORED):
     """
         Start up the server that tunnels traffic to a gdbserver instance running on a gateway
     """
@@ -113,7 +113,7 @@ async def serve_tunnel(host, port, connection_params, *, task_status=trio.TASK_S
 
         server = await nursery.start(serve_listeners)
         task_status.started(server)
-        click.echo(f'Serving GDB on {host}:{port}. Press Ctrl+C to quit.')
+        click.echo(f'Serving {name} on {host}:{port}. Press Ctrl+C to quit.')
         try:
             await trio.sleep_forever()
         except KeyboardInterrupt:

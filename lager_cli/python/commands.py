@@ -43,12 +43,19 @@ def zip_dir(root):
 @click.option(
     '--file', 'files',
     multiple=True, type=click.Path(exists=True, dir_okay=False), help='Files which will be made available to your script')
-def python(ctx, script, gateway, image, module, env, files):
+@click.option('--kill', is_flag=True, default=False)
+def python(ctx, script, gateway, image, module, env, files, kill):
     """
         Run a python script on the gateway
     """
+    session = ctx.obj.session
     if gateway is None:
         gateway = get_default_gateway(ctx)
+
+    if kill:
+        resp = session.kill_python(gateway).json()
+        click.echo(base64.b64decode(resp['stderr']), err=True, nl=False)
+        return
 
     if not script and not module:
         click.echo('Error: script or module not provided', err=True)
@@ -73,7 +80,6 @@ def python(ctx, script, gateway, image, module, env, files):
     if script:
         post_data.append(('script', script.read()))
 
-    session = ctx.obj.session
     resp = session.run_python(gateway, files=post_data)
     output = resp.json()
     output['stdout'] = base64.b64decode(output['stdout'])

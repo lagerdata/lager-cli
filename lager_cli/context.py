@@ -31,8 +31,24 @@ def print_openocd_error(error):
         if 'Error: ' in line:
             click.secho(line, fg='red', err=True)
 
+def print_docker_error(ctx, error):
+    """
+        Parse an openocd log file and print the error lines
+    """
+    if not error:
+        return
+    parsed = json.loads(error)
+    stdout = parsed['stdout']
+    stderr = parsed['stderr']
+    click.echo(stdout, nl=False)
+    click.echo(stderr, err=True, nl=False)
+    ctx.exit(parsed['returncode'])
+
 OPENOCD_ERROR_CODES = set((
     'openocd_start_failed',
+))
+
+DOCKER_ERROR_CODES = set((
 ))
 
 def quote(gateway):
@@ -64,8 +80,12 @@ class LagerSession(BaseUrlSession):
             ctx.exit(1)
         if r.status_code == 422:
             error = r.json()['error']
-            if error['code'] in OPENOCD_ERROR_CODES:
+            if error['code'] == 'image_running':
+                click.echo('Script already running - please wait for it to finish or use `lager python --kill` to forcibly terminate it. ', err=True)
+            elif error['code'] in OPENOCD_ERROR_CODES:
                 print_openocd_error(error['description'])
+            elif error['code'] in DOCKER_ERROR_CODES:
+                print_docker_error(ctx, error['description'])
             else:
                 click.secho(error['description'], fg='red', err=True)
             ctx.exit(1)
@@ -138,6 +158,13 @@ class LagerSession(BaseUrlSession):
         """
         url = 'gateway/{}/run-python'.format(quote(gateway))
         return self.post(url, files=files, stream=True)
+
+    def kill_python(self, gateway):
+        """
+            Run python on a gateway
+        """
+        url = 'gateway/{}/kill-python'.format(quote(gateway))
+        return self.post(url, stream=True)
 
     def gateway_hello(self, gateway):
         """

@@ -40,7 +40,10 @@ def zip_dir(root):
 @click.option(
     '--env',
     multiple=True, type=EnvVarType(), help='Environment variables')
-def python(ctx, script, gateway, image, module, env):
+@click.option(
+    '--file', 'files',
+    multiple=True, type=click.Path(exists=True, dir_okay=False), help='Files which will be made available to your script')
+def python(ctx, script, gateway, image, module, env, files):
     """
         Run a python script on the gateway
     """
@@ -51,21 +54,27 @@ def python(ctx, script, gateway, image, module, env):
         click.echo('Error: script or module not provided', err=True)
         ctx.exit(1)
 
-    files = [
+    post_data = [
         ('image', image),
     ]
-    files.extend(
+    post_data.extend(
         zip(itertools.repeat('env'), env)
+    )
+    post_data.extend(
+        zip(itertools.repeat('filename'), files)
+    )
+    post_data.extend(
+        zip(itertools.repeat('file'), [open(filename, 'rb') for filename in files])
     )
 
     if module:
-        files.append(('module', zip_dir(module)))
+        post_data.append(('module', zip_dir(module)))
 
     if script:
-        files.append(('script', script.read()))
+        post_data.append(('script', script.read()))
 
     session = ctx.obj.session
-    resp = session.run_python(gateway, files=files)
+    resp = session.run_python(gateway, files=post_data)
     output = resp.json()
     output['stdout'] = base64.b64decode(output['stdout'])
     output['stderr'] = base64.b64decode(output['stderr'])

@@ -132,6 +132,13 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/flash-duck'.format(quote(gateway))
         return self.post(url, files=files, stream=True)
 
+    def run_python(self, gateway, files):
+        """
+            Run python on a gateway
+        """
+        url = 'gateway/{}/run-python'.format(quote(gateway))
+        return self.post(url, files=files, stream=True)
+
     def gateway_hello(self, gateway):
         """
             Say hello to gateway to see if it is connected

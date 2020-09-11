@@ -5,6 +5,7 @@
 """
 import collections
 import os
+import re
 import click
 
 class MemoryAddressType(click.ParamType):
@@ -52,22 +53,46 @@ class HexParamType(click.ParamType):
 
 class VarAssignmentType(click.ParamType):
     """
-        Hexadecimal integer parameter
+        Openocd variable parameter
     """
     name = 'FOO=BAR'
 
     def convert(self, value, param, ctx):
         """
-            Parse string reprsentation of a hex integer
+            Parse a variable assignment
         """
         parts = value.split('=')
         if len(parts) != 2:
-            raise ValueError('Invalid assignment')
+            self.fail('Invalid assignment', param, ctx)
 
         return parts
 
     def __repr__(self):
         return 'VAR ASSIGNMENT'
+
+class EnvVarType(click.ParamType):
+    """
+        Environment variable
+    """
+    name = 'FOO=BAR'
+    regex = re.compile(r'\A[a-zA-Z_]{1,}[a-zA-Z0-9_]{0,}\Z')
+
+    def convert(self, value, param, ctx):
+        """
+            Parse string representation of environment variable
+        """
+        parts = value.split('=', maxsplit=1)
+        if len(parts) != 2:
+            self.fail('Invalid assignment', param, ctx)
+
+        name = parts[0]
+        if not self.regex.match(name):
+            self.fail(f'Invalid environment variable name "{name}". Names must begin with a letter or underscore, and may only contain letters, underscores, and digits', param, ctx)
+
+        return value
+
+    def __repr__(self):
+        return 'ENV VAR'
 
 Binfile = collections.namedtuple('Binfile', ['path', 'address'])
 class BinfileType(click.ParamType):

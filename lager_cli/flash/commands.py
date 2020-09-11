@@ -9,7 +9,7 @@ from ..context import get_default_gateway
 from ..util import stream_output
 from ..paramtypes import BinfileType
 
-def do_flash(session, gateway, hexfile, binfile, preverify, verify, force=False):
+def do_flash(session, gateway, hexfile, binfile, preverify, verify):
     """
         Perform the actual flash operation
     """
@@ -22,7 +22,7 @@ def do_flash(session, gateway, hexfile, binfile, preverify, verify, force=False)
     )
     files.append(('preverify', preverify))
     files.append(('verify', verify))
-    files.append(('force', force))
+    files.append(('force', False))
 
     return session.flash_dut(gateway, files=files)
 
@@ -44,8 +44,7 @@ def do_flash(session, gateway, hexfile, binfile, preverify, verify, force=False)
     help='If true, only flash target if image differs from current flash contents',
     default=True, show_default=True)
 @click.option('--verify/--no-verify', help='Verify image successfully flashed', default=True, show_default=True)
-@click.option('--force', is_flag=True)
-def flash(ctx, gateway, hexfile, binfile, preverify, verify, force):
+def flash(ctx, gateway, hexfile, binfile, preverify, verify):
     """
         Flash a DUT connected to a gateway with 1 or more bin or hex files
     """
@@ -54,5 +53,5 @@ def flash(ctx, gateway, hexfile, binfile, preverify, verify, force):
 
     session = ctx.obj.session
 
-    resp = do_flash(session, gateway, hexfile, binfile, preverify, verify, force)
+    resp = do_flash(session, gateway, hexfile, binfile, preverify, verify)
     stream_output(resp)

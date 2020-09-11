@@ -80,10 +80,6 @@ def python(ctx, script, gateway, image, module, env, files, kill):
     if script:
         post_data.append(('script', script.read()))
 
+
     resp = session.run_python(gateway, files=post_data)
-    output = resp.json()
-    output['stdout'] = base64.b64decode(output['stdout'])
-    output['stderr'] = base64.b64decode(output['stderr'])
-    click.echo(output['stdout'], nl=False)
-    click.echo(output['stderr'], nl=False, err=True)
-    ctx.exit(output['returncode'])
+    stream_output(resp)

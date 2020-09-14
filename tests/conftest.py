@@ -6,7 +6,7 @@ import os
 import contextlib
 import functools
 import trio
-import trio_websocket
+import lager_trio_websocket
 import requests_mock
 import bson
 import pytest
@@ -28,7 +28,7 @@ def make_server():
     @contextlib.asynccontextmanager
     async def server_fn(handler):
         async with trio.open_nursery() as nursery:
-            server_fn = functools.partial(trio_websocket.serve_websocket, handler, 'localhost', 0, ssl_context=None)
+            server_fn = functools.partial(lager_trio_websocket.serve_websocket, handler, 'localhost', 0, ssl_context=None)
             server = await nursery.start(server_fn)
             for listener in server.listeners:
                 if '::' not in listener.url:

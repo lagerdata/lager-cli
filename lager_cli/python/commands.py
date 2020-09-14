@@ -10,7 +10,7 @@ from io import BytesIO
 import base64
 import click
 from ..context import get_default_gateway
-from ..util import stream_output
+from ..util import stream_python_output
 from ..paramtypes import EnvVarType
 
 def handle_error(error):
@@ -19,7 +19,7 @@ def handle_error(error):
 def zip_dir(root):
     archive = BytesIO()
     with ZipFile(archive, 'w') as zip_archive:
-        for (dirpath, dirnames, filenames) in os.walk(root, onerror=handle_error):
+        for (dirpath, _dirnames, filenames) in os.walk(root, onerror=handle_error):
             for name in filenames:
                 if name.endswith('.pyc'):
                     continue
@@ -85,4 +85,4 @@ def python(ctx, script, gateway, image, module, env, files, kill, timeout):
 
 
     resp = session.run_python(gateway, files=post_data)
-    stream_output(resp)
+    stream_python_output(resp)

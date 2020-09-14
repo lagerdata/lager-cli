@@ -1,0 +1,2 @@
+class GatewayTimeoutError(RuntimeError):
+    pass

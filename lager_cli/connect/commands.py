@@ -4,9 +4,11 @@
     Commands for connecting to / disconnecting from DUT
 """
 import itertools
+import time
 import click
 from .. import SUPPORTED_DEVICES, SUPPORTED_INTERFACES
 from ..context import get_default_gateway
+from ..exceptions import GatewayTimeoutError
 from ..paramtypes import HexParamType, VarAssignmentType
 
 @click.command()
@@ -60,7 +62,20 @@ def connect(ctx, gateway, snr, device, interface, transport, speed, workareasize
     )
 
     session = ctx.obj.session
-    resp = session.start_debugger(gateway, files=files).json()
+    tries = 3
+    while True:
+        try:
+            resp = session.start_debugger(gateway, files=files).json()
+            break
+        except GatewayTimeoutError as exc:
+            tries -= 1
+            if tries <= 0:
+                click.secho(str(exc), fg='red', err=True)
+                ctx.exit(1)
+            else:
+                click.echo('Connection to gateway timed out, retrying...', err=True)
+                time.sleep(2)
+
     if resp.get('start') == 'ok':
         click.secho('Connected!', fg='green')
     elif resp.get('already_running') == 'ok':

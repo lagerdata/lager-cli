@@ -14,6 +14,7 @@ import requests
 import click
 from requests_toolbelt.sessions import BaseUrlSession
 from . import __version__
+from .exceptions import GatewayTimeoutError
 
 _DEFAULT_HOST = 'https://app.lagerdata.com'
 _DEFAULT_WEBSOCKET_HOST = 'wss://app.lagerdata.com'
@@ -55,6 +56,7 @@ DOCKER_ERROR_CODES = set((
 def quote(gateway):
     return urllib.parse.quote(str(gateway), safe='')
 
+
 class LagerSession(BaseUrlSession):
     """
         requests session wrapper
@@ -81,6 +83,9 @@ class LagerSession(BaseUrlSession):
             ctx.exit(1)
         if r.status_code == 422:
             error = r.json()['error']
+            if error['code'] == 'gateway_timeout_error':
+                raise GatewayTimeoutError(error['description'])
+
             if error['code'] == 'image_running':
                 click.echo('Script already running - please wait for it to finish or use `lager python --kill` to forcibly terminate it. ', err=True)
             elif error['code'] in OPENOCD_ERROR_CODES:

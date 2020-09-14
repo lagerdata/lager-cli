@@ -12,7 +12,7 @@ from ..config import (
     get_devenv_config,
     DEVENV_SECTION_NAME,
 )
-from ..context import get_ci_environment, CIEnvironment
+from ..context import get_ci_environment, CIEnvironment, is_container_ci
 
 def _run_command_host(section, path, cmd_to_run, extra_args, debug):
     """
@@ -58,7 +58,7 @@ def _run_command_container(section, cmd_to_run, extra_args, debug):
 
 def _run_command(section, path, cmd_to_run, extra_args, debug):
     ci_env = get_ci_environment()
-    if ci_env == CIEnvironment.CONTAINER_CI:
+    if is_container_ci(ci_env):
         return _run_command_container(section, cmd_to_run, extra_args, debug)
     if ci_env == CIEnvironment.HOST:
         return _run_command_host(section, path, cmd_to_run, extra_args, debug)

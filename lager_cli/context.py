@@ -13,6 +13,7 @@ import urllib3
 import requests
 import click
 from requests_toolbelt.sessions import BaseUrlSession
+from . import __version__
 
 _DEFAULT_HOST = 'https://app.lagerdata.com'
 _DEFAULT_WEBSOCKET_HOST = 'wss://app.lagerdata.com'
@@ -107,6 +108,14 @@ class LagerSession(BaseUrlSession):
                 'Authorization': '{} {}'.format(auth['type'], auth['token'])
             }
             self.headers.update(auth_header)
+        self.headers.update({'Lager-Version': __version__})
+        ci_env = get_ci_environment()
+        if ci_env == CIEnvironment.HOST:
+            self.headers.update({'Lager-CI-Active': 'False'})
+        else:
+            self.headers.update({'Lager-CI-Active': 'True'})
+            self.headers.update({'Lager-CI-System': ci_env.name})
+
         self.verify = verify
         self.hooks['response'].append(functools.partial(LagerSession.handle_errors, ctx))
 
@@ -396,10 +405,25 @@ def ensure_debugger_running(gateway, ctx):
 
 class CIEnvironment(Enum):
     """
-        Enum representing supported CI system
+        Enum representing supported CI systems
     """
     HOST = 'host'
-    CONTAINER_CI = 'container_ci'
+    DRONE = 'drone'
+    GITHUB = 'github'
+    BITBUCKET = 'bitbucket'
+    GENERIC_CI = 'ci'
+
+_CONTAINER_CI = set((
+    CIEnvironment.DRONE,
+    CIEnvironment.GITHUB,
+    CIEnvironment.BITBUCKET,
+))
+
+def is_container_ci(ci_env):
+    """
+        Supported container-based CI solutions
+    """
+    return ci_env in _CONTAINER_CI
 
 def get_ci_environment():
     """
@@ -407,7 +431,12 @@ def get_ci_environment():
     """
 
     if os.getenv('CI') == 'true':
-        if os.getenv('DRONE') == 'true' or os.getenv('GITHUB_RUN_ID') or os.getenv('BITBUCKET_BUILD_NUMBER'):
-            return CIEnvironment.CONTAINER_CI
+        if os.getenv('DRONE') == 'true':
+            return CIEnvironment.DRONE
+        if os.getenv('GITHUB_RUN_ID'):
+            return CIEnvironment.GITHUB
+        if os.getenv('BITBUCKET_BUILD_NUMBER'):
+            return CIEnvironment.BITBUCKET
+        return CIEnvironment.GENERIC_CI
 
     return CIEnvironment.HOST

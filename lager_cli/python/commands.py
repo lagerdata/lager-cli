@@ -17,14 +17,26 @@ def handle_error(error):
     raise error
 
 def zip_dir(root):
+    exclude = ['.git']
     archive = BytesIO()
     with ZipFile(archive, 'w') as zip_archive:
-        for (dirpath, _dirnames, filenames) in os.walk(root, onerror=handle_error):
+
+        # Walk once to find and exclude any python virtual envs
+        for (dirpath, dirnames, filenames) in os.walk(root, onerror=handle_error):
+            for name in filenames:
+                full_name = os.path.join(dirpath, name)
+                if 'pyvenv.cfg' in full_name:
+                    exclude.append(os.path.relpath(os.path.dirname(full_name)))
+
+        # Walk again to grab everything that's not excluded
+        for (dirpath, dirnames, filenames) in os.walk(root, onerror=handle_error):
+            dirnames[:] = [d for d in dirnames if not d.startswith(tuple(exclude))]
+
             for name in filenames:
                 if name.endswith('.pyc'):
                     continue
                 full_name = os.path.join(dirpath, name)
-                relative_name = full_name.split(root)[1][1:]
+                relative_name = os.path.basename(full_name)
                 fileinfo = ZipInfo(relative_name)
                 with open(full_name, 'rb') as f:
                     zip_archive.writestr(fileinfo, f.read())
@@ -33,10 +45,9 @@ def zip_dir(root):
 
 @click.command()
 @click.pass_context
-@click.argument('script', required=False, type=click.File('rb'))
+@click.argument('runnable', required=True, type=click.Path(exists=True))
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.option('--image', default='lagerdata/gatewaypy3', help='Docker image to use for running script')
-@click.option('--module', required=False, help='Python module to run', type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option(
     '--env',
     multiple=True, type=EnvVarType(), help='Environment variables')
@@ -45,7 +56,7 @@ def zip_dir(root):
     multiple=True, type=click.Path(exists=True, dir_okay=False), help='Files which will be made available to your script')
 @click.option('--kill', is_flag=True, default=False)
 @click.option('--timeout', type=click.INT, required=False)
-def python(ctx, script, gateway, image, module, env, files, kill, timeout):
+def python(ctx, runnable, gateway, image, env, files, kill, timeout):
     """
         Run a python script on the gateway
     """
@@ -57,10 +68,6 @@ def python(ctx, script, gateway, image, module, env, files, kill, timeout):
         resp = session.kill_python(gateway).json()
         click.echo(base64.b64decode(resp['stderr']), err=True, nl=False)
         return
-
-    if not script and not module:
-        click.echo('Error: script or module not provided', err=True)
-        ctx.exit(1)
 
     post_data = [
         ('image', image),
@@ -77,12 +84,10 @@ def python(ctx, script, gateway, image, module, env, files, kill, timeout):
     if timeout is not None:
         post_data.append(('timeout', timeout))
 
-    if module:
-        post_data.append(('module', zip_dir(module)))
-
-    if script:
-        post_data.append(('script', script.read()))
-
+    if os.path.isfile(runnable):
+        post_data.append(('script', open(runnable, 'rb')))
+    elif os.path.isdir(runnable):
+        post_data.append(('module', zip_dir(runnable)))
 
     resp = session.run_python(gateway, files=post_data)
     stream_python_output(resp)

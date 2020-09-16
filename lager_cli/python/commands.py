@@ -85,8 +85,7 @@ def python(ctx, runnable, gateway, image, env, files, kill, timeout):
         post_data.append(('timeout', timeout))
 
     if os.path.isfile(runnable):
-        with open(runnable, 'r') as script_file:
-            post_data.append(('script', script_file.read()))
+        post_data.append(('script', open(runnable, 'rb')))
     elif os.path.isdir(runnable):
         post_data.append(('module', zip_dir(runnable)))
 

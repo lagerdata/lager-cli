@@ -7,6 +7,7 @@ import os
 import itertools
 from zipfile import ZipFile, ZipInfo
 from io import BytesIO
+import functools
 import base64
 import click
 from ..context import get_default_gateway
@@ -14,9 +15,15 @@ from ..util import stream_python_output
 from ..paramtypes import EnvVarType
 
 def handle_error(error):
+    """
+        os.walk error handler, just raise it
+    """
     raise error
 
 def zip_dir(root):
+    """
+        Zip a directory into memory
+    """
     exclude = ['.git']
     archive = BytesIO()
     with ZipFile(archive, 'w') as zip_archive:
@@ -90,4 +97,5 @@ def python(ctx, runnable, gateway, image, env, files, kill, timeout):
         post_data.append(('module', zip_dir(runnable)))
 
     resp = session.run_python(gateway, files=post_data)
-    stream_python_output(resp)
+    kill_python = functools.partial(session.kill_python, gateway)
+    stream_python_output(resp, kill_python)

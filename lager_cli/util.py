@@ -4,6 +4,8 @@
     Catchall for utility functions
 """
 import sys
+import functools
+import signal
 import click
 import trio
 import lager_trio_websocket as trio_websocket
@@ -22,12 +24,20 @@ def stream_output(response, chunk_size=1):
         click.echo(chunk, nl=False)
         sys.stdout.flush()
 
-def _stream_python_output_v1(response, chunk_size):
+_ORIGINAL_SIGINT_HANDLER = signal.getsignal(signal.SIGINT)
+
+def sigint_handler(kill_python, sig, frame):
+    signal.signal(signal.SIGINT, _ORIGINAL_SIGINT_HANDLER)
+    kill_python(signal.SIGINT)
+
+def _stream_python_output_v1(response, kill_python, chunk_size):
     if 'Lager-Separator' not in response.headers:
         separator = None
     else:
         separator = response.headers['Lager-Separator'].encode()
     matcher = PythonMatcherV1(separator)
+    handler = functools.partial(sigint_handler, kill_python)
+    signal.signal(signal.SIGINT, handler)
     for chunk in response.iter_content(chunk_size=chunk_size):
         matcher.feed(chunk)
     exit_code = matcher.exit_code
@@ -39,9 +49,9 @@ def _stream_python_output_v1(response, chunk_size):
         click.secho('Gateway script forcibly killed due to timeout.', fg='red', err=True)
     sys.exit(matcher.exit_code)
 
-def stream_python_output(response, chunk_size=1):
+def stream_python_output(response, kill_python, chunk_size=1):
     if response.headers.get('Lager-Output-Version') == '1':
-        _stream_python_output_v1(response, chunk_size)
+        _stream_python_output_v1(response, kill_python, chunk_size)
     else:
         click.secho('Response format not supported. Please upgrade lager-cli', fg='red', err=True)
         sys.exit(1)

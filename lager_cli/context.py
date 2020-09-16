@@ -173,12 +173,12 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/run-python'.format(quote(gateway))
         return self.post(url, files=files, stream=True)
 
-    def kill_python(self, gateway):
+    def kill_python(self, gateway, sig):
         """
             Run python on a gateway
         """
         url = 'gateway/{}/kill-python'.format(quote(gateway))
-        return self.post(url, stream=True)
+        return self.post(url, json={'signal': sig}, stream=True)
 
     def gateway_hello(self, gateway):
         """

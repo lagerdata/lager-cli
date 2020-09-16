@@ -58,12 +58,9 @@ def zip_dir(root):
 @click.option(
     '--env',
     multiple=True, type=EnvVarType(), help='Environment variables')
-@click.option(
-    '--file', 'files',
-    multiple=True, type=click.Path(exists=True, dir_okay=False), help='Files which will be made available to your script')
 @click.option('--kill', is_flag=True, default=False)
 @click.option('--timeout', type=click.INT, required=False)
-def python(ctx, runnable, gateway, image, env, files, kill, timeout):
+def python(ctx, runnable, gateway, image, env, kill, timeout):
     """
         Run a python script on the gateway
     """
@@ -82,12 +79,7 @@ def python(ctx, runnable, gateway, image, env, files, kill, timeout):
     post_data.extend(
         zip(itertools.repeat('env'), env)
     )
-    post_data.extend(
-        zip(itertools.repeat('filename'), files)
-    )
-    post_data.extend(
-        zip(itertools.repeat('file'), [open(filename, 'rb') for filename in files])
-    )
+
     if timeout is not None:
         post_data.append(('timeout', timeout))
 

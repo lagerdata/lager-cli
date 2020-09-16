@@ -5,7 +5,7 @@
 """
 import os
 import itertools
-from zipfile import ZipFile, ZipInfo
+from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 from io import BytesIO
 import functools
 import base64
@@ -27,7 +27,6 @@ def zip_dir(root):
     exclude = ['.git']
     archive = BytesIO()
     with ZipFile(archive, 'w') as zip_archive:
-
         # Walk once to find and exclude any python virtual envs
         for (dirpath, dirnames, filenames) in os.walk(root, onerror=handle_error):
             for name in filenames:
@@ -46,7 +45,7 @@ def zip_dir(root):
                 relative_name = os.path.basename(full_name)
                 fileinfo = ZipInfo(relative_name)
                 with open(full_name, 'rb') as f:
-                    zip_archive.writestr(fileinfo, f.read())
+                    zip_archive.writestr(fileinfo, f.read(), ZIP_DEFLATED)
 
     return archive.getbuffer()
 

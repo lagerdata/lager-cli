@@ -1,4 +1,5 @@
 import sys
+import enum
 import click
 
 def test_matcher_factory(test_runner):
@@ -22,43 +23,54 @@ def echo_line(line, color):
     except UnicodeDecodeError:
         click.echo(line)
 
-class PythonMatcherV1:
-    def __init__(self, separator, printer=click.echo):
-        self.printer = printer
-        self.state = b''
-        self.separator = separator
-        self.done = False
-        self.swallowed_newline = False
 
-    def feed(self, data):
-        self.state += data
-        lines = self.state.split(b'\n')
-        to_process, remainder = lines[:-1], lines[-1]
+class V1ParseStates(enum.Enum):
+    """
+        Parser states
+    """
+    Start = 'start'
+    FirstSpace = 'first_space'
+    Length = 'length'
+    SecondSpace = 'second_space'
+    Content = 'content'
 
-        self.state = remainder
-        if not to_process:
-            return
 
-        last_index = len(to_process) - 1
-        for (i, line) in enumerate(to_process):
-            if line == self.separator:
-                self.done = True
-                continue
-            if not self.done:
-                if i == 0 and self.swallowed_newline:
-                    self.printer(b'')
-                    self.swallowed_newline = False
-                if i == last_index and line == b'':
-                    self.swallowed_newline = True
+def iter_streams(response):
+    """
+        Iterate over file streams returned from python running on the gateway
+    """
+    parse_state = V1ParseStates.Start
+    fileno = None
+    data = b''
+    length_str = b''
+    length = None
+    for chunk in response.iter_content(chunk_size=1):
+        if parse_state == V1ParseStates.Start:
+            if chunk == b'-':
+                fileno = -1
+            else:
+                fileno = int(chunk.decode(), 10)
+            parse_state = V1ParseStates.FirstSpace
+        elif parse_state == V1ParseStates.FirstSpace:
+            parse_state = V1ParseStates.Length
+        elif parse_state == V1ParseStates.Length:
+            if chunk == b' ':
+                length = int(length_str.decode())
+                length_str = b''
+                if length == 0:
+                    parse_state = V1ParseStates.Start
                 else:
-                    self.printer(line)
-                    sys.stdout.flush()
-
-    @property
-    def exit_code(self):
-        if not self.done:
-            raise RuntimeError('Incomplete response received from gateway')
-        return int(self.state, 10)
+                    parse_state = V1ParseStates.Content
+            else:
+                length_str += chunk
+        elif V1ParseStates.Content:
+            data += chunk
+            if len(data) == length:
+                yield (fileno, data)
+                data = b''
+                length = None
+                fileno = None
+                parse_state = V1ParseStates.Start
 
 
 class UnityMatcher:

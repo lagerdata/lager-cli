@@ -35,7 +35,7 @@ def sigint_handler(kill_python, _sig, _frame):
         Handle Ctrl+C by restoring the old signal handler (so that subsequent Ctrl+C will actually
         stop python), and send the SIGTERM to the running docker container.
     """
-    click.echo('handle signiit')
+    click.echo(' Attempting to stop Lager Python job')
     signal.signal(signal.SIGINT, _ORIGINAL_SIGINT_HANDLER)
     kill_python(signal.SIGINT)
 

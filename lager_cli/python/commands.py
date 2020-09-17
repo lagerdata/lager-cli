@@ -8,7 +8,6 @@ import itertools
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 from io import BytesIO
 import functools
-import base64
 import click
 from ..context import get_default_gateway
 from ..util import stream_python_output
@@ -56,10 +55,17 @@ def zip_dir(root):
 @click.option('--image', default='lagerdata/gatewaypy3', help='Docker image to use for running script')
 @click.option(
     '--env',
-    multiple=True, type=EnvVarType(), help='Environment variables')
-@click.option('--kill', is_flag=True, default=False)
-@click.option('--timeout', type=click.INT, required=False)
-def python(ctx, runnable, gateway, image, env, kill, timeout):
+    multiple=True, type=EnvVarType(), help='Environment variables to set for the python script. '
+    'Format is `--env FOO=BAR` - this will set an environment varialbe named `FOO` to the value `BAR`')
+@click.option(
+    '--passenv',
+    multiple=True, help='Environment variables to inherit from the current environment and pass to the python script. '
+    'This option is useful for secrets, tokens, passwords, or any other values that you do not want to appear on the '
+    'command line. Example: `--passenv FOO` will set an environment variable named `FOO` in the python script to the value'
+    'of `FOO` in the current environment.')
+@click.option('--kill', is_flag=True, default=False, help='Terminate a running python script')
+@click.option('--timeout', type=click.INT, required=False, help='Max runtime in seconds for the python script')
+def python(ctx, runnable, gateway, image, env, passenv, kill, timeout):
     """
         Run a python script on the gateway
     """
@@ -69,7 +75,7 @@ def python(ctx, runnable, gateway, image, env, kill, timeout):
 
     if kill:
         resp = session.kill_python(gateway).json()
-        click.echo(base64.b64decode(resp['stderr']), err=True, nl=False)
+        resp.raise_for_status()
         return
 
     post_data = [
@@ -77,6 +83,9 @@ def python(ctx, runnable, gateway, image, env, kill, timeout):
     ]
     post_data.extend(
         zip(itertools.repeat('env'), env)
+    )
+    post_data.extend(
+        zip(itertools.repeat('env'), [f'{name}={os.environ[name]}' for name in passenv])
     )
 
     if timeout is not None:

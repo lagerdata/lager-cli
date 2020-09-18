@@ -7,6 +7,7 @@ import os
 import itertools
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 from io import BytesIO
+import pathlib
 import functools
 import click
 from ..context import get_default_gateway
@@ -23,6 +24,7 @@ def zip_dir(root):
     """
         Zip a directory into memory
     """
+    rootpath = pathlib.Path(root)
     exclude = ['.git']
     archive = BytesIO()
     with ZipFile(archive, 'w') as zip_archive:
@@ -40,9 +42,8 @@ def zip_dir(root):
             for name in filenames:
                 if name.endswith('.pyc'):
                     continue
-                full_name = os.path.join(dirpath, name)
-                relative_name = os.path.basename(full_name)
-                fileinfo = ZipInfo(relative_name)
+                full_name = pathlib.Path(dirpath) / name
+                fileinfo = ZipInfo(str(full_name.relative_to(rootpath)))
                 with open(full_name, 'rb') as f:
                     zip_archive.writestr(fileinfo, f.read(), ZIP_DEFLATED)
 

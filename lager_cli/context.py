@@ -157,7 +157,7 @@ class LagerSession(BaseUrlSession):
             Erase DUT connected to gateway
         """
         url = 'gateway/{}/erase-duck'.format(quote(gateway))
-        return self.post(url, json=addresses)
+        return self.post(url, json=addresses, stream=True)
 
     def flash_dut(self, gateway, files):
         """

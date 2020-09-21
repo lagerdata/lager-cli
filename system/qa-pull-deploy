@@ -1,0 +1,19 @@
+#!/bin/bash
+
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+source ${DIR}/config
+cd ${DIR}/..
+
+${LAGER_CLI_PATH}/system/qa-pull-deploy
+${PYLAGER_PATH}/system/qa-pull-deploy
+
+export BEFORE_PULL=`git log -n1 | head -n1 | awk {'print $2'}`
+system/pull
+export AFTER_PULL=`git log -n1 | head -n1 | awk {'print $2'}`
+
+if test "${BEFORE_PULL}" != "${AFTER_PULL}"
+then
+    system/deploy qa
+fi

@@ -7,8 +7,8 @@ Lager Client Documentation
    :caption: Contents:
 
    auth
-   dut
-   devenv
+   dut/index
+   devenv/index
    gateway
    list
    set

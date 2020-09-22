@@ -6,6 +6,7 @@ Lager Client Documentation
    :maxdepth: 2
    :caption: Contents:
 
+   quickstart
    auth
    dut/index
    devenv/index

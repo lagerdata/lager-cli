@@ -10,6 +10,6 @@ export INSTALL_PATH=$(cd $DIR/.. && pwd)
 export LAGER_CLI_PATH=/opt/lager-cli
 
 export VENV_PATH="$(cat ${LAGER_CLI_PATH}/.venv)"
-export DEPLOY_KEY="/opt/lager-ops/deploy_keys/lager-docs-index.key"
+export DEPLOY_KEY="/opt/lager-ops/deploy_keys/lager-cli.key"
 
 export PATH="/opt/python/3.8.3/bin:$PATH"

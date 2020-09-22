@@ -1,5 +1,6 @@
-Connect GDB to your Device Under Test
-=====================================
+
+Connect GDB to Your DUT
+=======================
 
 
 .. click:: lager_cli.gdbserver.commands:gdbserver

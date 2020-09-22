@@ -1,5 +1,6 @@
-Flash a Device Under Test
-=========================
+
+Flash a DUT
+===========
 
 
 .. click:: lager_cli.flash.commands:flash

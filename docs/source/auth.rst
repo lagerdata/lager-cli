@@ -1,5 +1,5 @@
-Auth
-====
+Authentication
+==============
 
 .. click:: lager_cli.auth.commands:login
    :prog: lager login

@@ -1,4 +1,5 @@
-Lager development environments
+
+Lager Development Environments
 ==============================
 
 .. click:: lager_cli.devenv.commands:devenv

@@ -1,5 +1,6 @@
-Disconnecting from a device under test
-======================================
+
+Disconnecting from a DUT
+========================
 
 
 .. click:: lager_cli.connect.commands:disconnect

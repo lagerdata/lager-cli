@@ -1,5 +1,6 @@
-Connecting to a device under test
-=================================
+
+Connecting to a DUT
+===================
 
 
 .. click:: lager_cli.connect.commands:connect

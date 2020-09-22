@@ -20,6 +20,7 @@ pip install -r requirements-dev.txt
 pip install -e .
 
 cd docs
+rm -rf ./build/html
 make html
 
 cd build/html

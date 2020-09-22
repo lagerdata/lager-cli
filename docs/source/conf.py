@@ -17,9 +17,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'lager-cli'
-copyright = '2020, Lager Data, Inc'
 author = 'Lager Data, Inc'
+project = 'lager-cli'
+copyright = f'2020, {author}'
 
 
 # -- General configuration ---------------------------------------------------
@@ -30,6 +30,8 @@ author = 'Lager Data, Inc'
 extensions = [
     'sphinx_click',
 ]
+
+pygments_style = 'sphinx'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -48,6 +50,7 @@ smartquotes = False
 html_theme = 'sphinx_rtd_theme'
 
 html_favicon = 'lager-favicon.png'
+html_title = author
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

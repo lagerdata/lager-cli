@@ -7,12 +7,8 @@ Lager Client Documentation
    :caption: Contents:
 
    quickstart
-   auth
-   dut/index
-   devenv/index
-   gateway
-   list
-   set
+   connecting
+   command_reference
 
 Indices and tables
 ==================

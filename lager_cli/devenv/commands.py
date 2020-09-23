@@ -64,7 +64,8 @@ def create(ctx, image, mount_dir, shell):
     write_config_file(config, config_path)
 
 @devenv.command()
-def terminal():
+@click.pass_context
+def terminal(ctx):
     """
         Start an interactive terminal for a docker image
     """
@@ -74,7 +75,7 @@ def terminal():
     image = section.get('image')
     source_dir = os.path.dirname(path)
     mount_dir = section.get('mount_dir')
-    subprocess.run([
+    proc = subprocess.run([
         'docker',
         'run',
         '-it',
@@ -82,7 +83,8 @@ def terminal():
         '-v',
         f'{source_dir}:{mount_dir}',
         image,
-    ], check=True)
+    ], check=False)
+    ctx.exit(proc.returncode)
 
 
 @devenv.command()

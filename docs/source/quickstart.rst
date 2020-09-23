@@ -1,3 +1,4 @@
+.. _quickstart:
 .. highlight:: console
 
 Quickstart
@@ -31,6 +32,18 @@ If you do not have a browser installed (for example if you are using a virtual m
     And confirm your device token: ABCD-EFGH-IJKL
     Awaiting confirmation... (Could take up to 5 seconds after clicking "Confirm" in your browser)
 
+List your gateways
+------------------
+``lager list gateways``
+
+This will show a list of gateways associated with your account.
+::
+
+    ➜  ~ lager list gateways
+    name            id
+    elegant-eagle    1
+
+
 Say hello to your gateway
 -------------------------
 ``lager gateway hello``
@@ -40,4 +53,4 @@ Say hello to your gateway
     ➜  ~ lager gateway hello
     Hello, world! Your gateway is connected.
 
-If you get the "Hello, world!" message, that means your gateway is connected and ready to receive commands! Now let's :ref:`connect to your Device Under Test<connecting>`.
+If you get the "Hello, world!" message, that means your gateway is connected and ready to receive commands! If you have more than one gateway, you can use the ``--gateway <name>`` flag e.g. ``lager gateway hello --gateway elegant-eagle``. Otherwise, if you only have one gateway, the command will automatically use that one. Now, let's :ref:`connect to your Device Under Test<connecting>`.

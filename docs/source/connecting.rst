@@ -15,7 +15,9 @@ Connect flags
 ``--device``
 ~~~~~~~~~~~~
 
-Specify what type of device is connected to the gateway.
+Identifies the Device Under Test which is connected to your gateway. See below for a list of supported devices. Example usage: ``lager connect --device nrf52``.
+
+.. autodata:: lager_cli.SUPPORTED_DEVICES
 
 ``--transport``
 ~~~~~~~~~~~~~~~

@@ -29,7 +29,11 @@ copyright = f'2020, {author}'
 # ones.
 extensions = [
     'sphinx_click',
+    'autoapi.extension',
 ]
+
+autoapi_dirs = ['../../lager_cli']
+autoapi_generate_api_docs = False
 
 pygments_style = 'sphinx'
 

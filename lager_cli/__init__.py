@@ -7,12 +7,14 @@ A Command Line Interface for Lager Data
 __version__ = '0.1.36'
 
 SUPPORTED_DEVICES = (
-    'nrf52',
+    'at91samdexx',
+    'at91samdgxx',
+    'atsame70',
+    'cc3220s',
     'cc3220sf',
     'cc3235sf',
-    'cc3220s',
-    'atsame70',
     'efm32',
+    'nrf52',
     'stm32f0x',
     'stm32f1x',
     'stm32f2x',
@@ -33,9 +35,9 @@ SUPPORTED_DEVICES = (
     'stm32wbx',
     'stm32wlx',
     'stm32xl',
-    'at91samdexx',
-    'at91samdgxx',
-)
+)  # Empty docstring below is to suppress tuple docstring that would otherwise be printed by autodoc
+"""
+"""
 
 SUPPORTED_INTERFACES = (
     'ftdi',

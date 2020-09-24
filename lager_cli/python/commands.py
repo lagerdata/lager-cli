@@ -53,7 +53,7 @@ def zip_dir(root):
 @click.pass_context
 @click.argument('runnable', required=True, type=click.Path(exists=True))
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
-@click.option('--image', default='lagerdata/gatewaypy3', help='Docker image to use for running script')
+@click.option('--image', default='lagerdata/gatewaypy3:v0.1.37', help='Docker image to use for running script')
 @click.option(
     '--env',
     multiple=True, type=EnvVarType(), help='Environment variables to set for the python script. '

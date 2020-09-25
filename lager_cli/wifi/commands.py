@@ -7,6 +7,8 @@
 import sys
 import math
 import click
+from texttable import Texttable
+
 from ..context import get_default_gateway
 from ..status import run_job_output
 from ..config import read_config_file
@@ -37,8 +39,8 @@ def status(ctx, gateway):
     resp = session.get_wifi_state(gateway)
     resp.raise_for_status()
 
-
-    click.echo(resp.content, nl=False)
+    click.echo('State: {}'.format(resp.json().get('state')))
+    click.echo('SSID:  {}'.format(resp.json().get('ssid')))
 
 
 @_wifi.command()
@@ -54,8 +56,16 @@ def access_points(ctx, gateway):
     session = ctx.obj.session
     resp = session.get_wifi_access_points(gateway)
     resp.raise_for_status()
-    click.echo(resp.content, nl=False)
 
+    table = Texttable()
+    table.set_deco(Texttable.HEADER)
+    table.set_cols_dtype(['t', 't', 'i'])
+    table.set_cols_align(['l', 'l', 'r'])
+    table.header(['ssid', 'security', 'strength'])
+    for ap in resp.json().get('access_points', []):
+        table.add_row([ap['ssid'], ap['security'], ap['strength']])
+
+    click.echo(table.draw())
 
 @_wifi.command()
 @click.pass_context
@@ -71,8 +81,9 @@ def connect(ctx, gateway, ssid, password=''):
 
     session = ctx.obj.session
     resp = session.connect_wifi(gateway, ssid, password)
-    click.echo(resp.content, nl=False)
     resp.raise_for_status()
+    if resp.json().get('acknowledged'):
+        click.echo('Acknowledged', nl=False)
 
 
 @_wifi.command()
@@ -88,5 +99,6 @@ def delete_connection(ctx, gateway, ssid):
 
     session = ctx.obj.session
     resp = session.delete_wifi_connection(gateway, ssid)
-    click.echo(resp.content, nl=False)
     resp.raise_for_status()
+    if resp.json().get('acknowledged'):
+        click.echo('Acknowledged', nl=False)

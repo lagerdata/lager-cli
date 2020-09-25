@@ -306,6 +306,13 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/gpio/hardware-clock'.format(quote(gateway))
         return self.post(url, json={'frequency': frequency})
 
+    def connect_wifi(self, gateway, ssid, password):
+        """
+            Connect the gateway to a wifi network
+        """
+        url = 'gateway/{}/wifi/connect'.format(quote(gateway))
+        return self.post(url, json={'ssid': ssid, 'password': password})
+
 class LagerContext:  # pylint: disable=too-few-public-methods
     """
         Lager Context manager

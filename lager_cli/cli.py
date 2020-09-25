@@ -32,6 +32,7 @@ from .connect.commands import connect, disconnect
 from .gpio.commands import gpio
 from .openocd.commands import openocd
 from .python.commands import python
+from .wifi.commands import _wifi
 
 def _decode_environment():
     for key in os.environ:
@@ -81,6 +82,7 @@ cli.add_command(disconnect)
 cli.add_command(gpio)
 cli.add_command(openocd)
 cli.add_command(python)
+cli.add_command(_wifi)
 
 def setup_context(ctx, debug, colorize, skip_auth):
     """

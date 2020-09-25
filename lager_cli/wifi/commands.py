@@ -35,6 +35,9 @@ def status(ctx, gateway):
 
     session = ctx.obj.session
     resp = session.get_wifi_state(gateway)
+    resp.raise_for_status()
+
+
     click.echo(resp.content, nl=False)
 
 
@@ -50,6 +53,7 @@ def access_points(ctx, gateway):
 
     session = ctx.obj.session
     resp = session.get_wifi_access_points(gateway)
+    resp.raise_for_status()
     click.echo(resp.content, nl=False)
 
 
@@ -68,6 +72,7 @@ def connect(ctx, gateway, ssid, password=''):
     session = ctx.obj.session
     resp = session.connect_wifi(gateway, ssid, password)
     click.echo(resp.content, nl=False)
+    resp.raise_for_status()
 
 
 @_wifi.command()
@@ -84,3 +89,4 @@ def delete_connection(ctx, gateway, ssid):
     session = ctx.obj.session
     resp = session.delete_wifi_connection(gateway, ssid)
     click.echo(resp.content, nl=False)
+    resp.raise_for_status()

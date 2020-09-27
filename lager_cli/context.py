@@ -306,6 +306,34 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/gpio/hardware-clock'.format(quote(gateway))
         return self.post(url, json={'frequency': frequency})
 
+    def get_wifi_state(self, gateway):
+        """
+            Get the connection state of the specified gateway
+        """
+        url = 'gateway/{}/wifi/state'.format(quote(gateway))
+        return self.get(url)
+
+    def get_wifi_access_points(self, gateway):
+        """
+            Get access points visible to the specified gateway
+        """
+        url = 'gateway/{}/wifi/access-points'.format(quote(gateway))
+        return self.get(url)
+
+    def connect_wifi(self, gateway, ssid, password):
+        """
+            Connect the gateway to a wifi network
+        """
+        url = 'gateway/{}/wifi/connect'.format(quote(gateway))
+        return self.post(url, json={'ssid': ssid, 'password': password})
+
+    def delete_wifi_connection(self, gateway, ssid):
+        """
+            Delete the wifi connection for the specified gateway
+        """
+        url = 'gateway/{}/wifi/delete-connection'.format(quote(gateway))
+        return self.post(url, json={'ssid': ssid})
+
 class LagerContext:  # pylint: disable=too-few-public-methods
     """
         Lager Context manager

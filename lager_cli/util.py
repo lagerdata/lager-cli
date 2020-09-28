@@ -4,9 +4,13 @@
     Catchall for utility functions
 """
 import sys
+import math
+import pathlib
+import os
 import functools
+from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
+from io import BytesIO
 import signal
-import time
 import click
 import trio
 import lager_trio_websocket as trio_websocket
@@ -100,3 +104,49 @@ async def heartbeat(websocket, timeout, interval):
             return
         if exc.reason.code != wsframeproto.CloseReason.NORMAL_CLOSURE or exc.reason.reason != 'EOF':
             raise
+
+
+def handle_error(error):
+    """
+        os.walk error handler, just raise it
+    """
+    raise error
+
+class SizeLimitExceeded(RuntimeError):
+    """
+        Raised if zip file size limit exceeded
+    """
+
+
+def zip_dir(root, max_content_size=math.inf):
+    """
+        Zip a directory into memory
+    """
+    rootpath = pathlib.Path(root)
+    exclude = ['.git']
+    archive = BytesIO()
+    total_size = 0
+    with ZipFile(archive, 'w') as zip_archive:
+        # Walk once to find and exclude any python virtual envs
+        for (dirpath, dirnames, filenames) in os.walk(root, onerror=handle_error):
+            for name in filenames:
+                full_name = os.path.join(dirpath, name)
+                if 'pyvenv.cfg' in full_name:
+                    exclude.append(os.path.relpath(os.path.dirname(full_name)))
+
+        # Walk again to grab everything that's not excluded
+        for (dirpath, dirnames, filenames) in os.walk(root, onerror=handle_error):
+            dirnames[:] = [d for d in dirnames if not d.startswith(tuple(exclude))]
+
+            for name in filenames:
+                if name.endswith('.pyc'):
+                    continue
+                full_name = pathlib.Path(dirpath) / name
+                total_size += os.path.getsize(full_name)
+                if total_size > max_content_size:
+                    raise SizeLimitExceeded
+
+                fileinfo = ZipInfo(str(full_name.relative_to(rootpath)))
+                with open(full_name, 'rb') as f:
+                    zip_archive.writestr(fileinfo, f.read(), ZIP_DEFLATED)
+    return archive.getbuffer()

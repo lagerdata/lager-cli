@@ -5,49 +5,13 @@
 """
 import os
 import itertools
-from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
-from io import BytesIO
-import pathlib
 import functools
 import click
 from ..context import get_default_gateway
-from ..util import stream_python_output
+from ..util import stream_python_output, zip_dir, SizeLimitExceeded
 from ..paramtypes import EnvVarType
 
-def handle_error(error):
-    """
-        os.walk error handler, just raise it
-    """
-    raise error
-
-def zip_dir(root):
-    """
-        Zip a directory into memory
-    """
-    rootpath = pathlib.Path(root)
-    exclude = ['.git']
-    archive = BytesIO()
-    with ZipFile(archive, 'w') as zip_archive:
-        # Walk once to find and exclude any python virtual envs
-        for (dirpath, dirnames, filenames) in os.walk(root, onerror=handle_error):
-            for name in filenames:
-                full_name = os.path.join(dirpath, name)
-                if 'pyvenv.cfg' in full_name:
-                    exclude.append(os.path.relpath(os.path.dirname(full_name)))
-
-        # Walk again to grab everything that's not excluded
-        for (dirpath, dirnames, filenames) in os.walk(root, onerror=handle_error):
-            dirnames[:] = [d for d in dirnames if not d.startswith(tuple(exclude))]
-
-            for name in filenames:
-                if name.endswith('.pyc'):
-                    continue
-                full_name = pathlib.Path(dirpath) / name
-                fileinfo = ZipInfo(str(full_name.relative_to(rootpath)))
-                with open(full_name, 'rb') as f:
-                    zip_archive.writestr(fileinfo, f.read(), ZIP_DEFLATED)
-
-    return archive.getbuffer()
+MAX_ZIP_SIZE = 10_000_000  # Max size of zipped folder in bytes
 
 @click.command()
 @click.pass_context
@@ -95,7 +59,18 @@ def python(ctx, runnable, gateway, image, env, passenv, kill, timeout):
     if os.path.isfile(runnable):
         post_data.append(('script', open(runnable, 'rb')))
     elif os.path.isdir(runnable):
-        post_data.append(('module', zip_dir(runnable)))
+        try:
+            max_content_size = 20_000_000
+            zipped_folder = zip_dir(runnable, max_content_size=max_content_size)
+        except SizeLimitExceeded:
+            click.secho(f'Folder content exceeds max size of {max_content_size:,} bytes', err=True, fg='red')
+            ctx.exit(1)
+
+        if len(zipped_folder) > MAX_ZIP_SIZE:
+            click.secho(f'Zipped module content exceeds max size of {MAX_ZIP_SIZE:,} bytes', err=True, fg='red')
+            ctx.exit(1)
+
+        post_data.append(('module', zipped_folder))
 
     resp = session.run_python(gateway, files=post_data)
     kill_python = functools.partial(session.kill_python, gateway)

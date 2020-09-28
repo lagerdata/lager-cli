@@ -8,6 +8,7 @@ Lager Client Documentation
 
    quickstart
    connecting
+   recipes
    command_reference
 
 Indices and tables

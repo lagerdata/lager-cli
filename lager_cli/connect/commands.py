@@ -19,7 +19,7 @@ from ..paramtypes import HexParamType, VarAssignmentType
     help='Serial number of device to connect. Required if multiple DUTs connected to gateway')
 @click.option('--device', help='Target device type', type=click.Choice(SUPPORTED_DEVICES), required=True)
 @click.option('--interface', help='Target interface', type=click.Choice(SUPPORTED_INTERFACES), default='ftdi', show_default=True)
-@click.option('--transport', help='Target transport', type=click.Choice(['swd', 'jtag']), default='swd', show_default=True)
+@click.option('--transport', help='Target transport', type=click.Choice(['swd', 'jtag', 'hla_swd']), default='swd', show_default=True)
 @click.option('--speed', help='Target interface speed in kHz', required=False, default='adaptive', show_default=True)
 @click.option('--workareasize', help='Set work area size. Useful for STM32 chips.', type=HexParamType(), required=False, default=None)
 @click.option('--set', 'set_', multiple=True, type=VarAssignmentType(), help='Set debugger environment variable FOO to BAR')

@@ -106,7 +106,6 @@ class LagerSession(BaseUrlSession):
         base_url = '{}{}'.format(host, '/api/v1/')
 
         super().__init__(*args, base_url=base_url, **kwargs)
-        self._connection_exception = None
         verify = 'NOVERIFY' not in os.environ
         if not verify:
             urllib3.disable_warnings()

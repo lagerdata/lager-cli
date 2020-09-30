@@ -29,9 +29,14 @@ def print_openocd_error(error):
     logfile = parsed['logfile']
     if not logfile:
         return
+    error_printed = False
     for line in logfile.splitlines():
         if 'Error: ' in line:
+            error_printed = True
             click.secho(line, fg='red', err=True)
+
+    if not error_printed:
+        click.secho('OpenOCD failed to start', fg='red', err=True)
 
 def print_docker_error(ctx, error):
     """

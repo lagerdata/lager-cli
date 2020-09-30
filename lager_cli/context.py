@@ -102,7 +102,10 @@ class LagerSession(BaseUrlSession):
         r.raise_for_status()
 
     def __init__(self, ctx, auth, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        host = os.getenv('LAGER_HOST', _DEFAULT_HOST)
+        base_url = '{}{}'.format(host, '/api/v1/')
+
+        super().__init__(*args, base_url=base_url, **kwargs)
         self._connection_exception = None
         verify = 'NOVERIFY' not in os.environ
         if not verify:
@@ -339,11 +342,8 @@ class LagerContext:  # pylint: disable=too-few-public-methods
         Lager Context manager
     """
     def __init__(self, ctx, auth, defaults, debug, style):
-        host = os.getenv('LAGER_HOST', _DEFAULT_HOST)
         ws_host = os.getenv('LAGER_WS_HOST', _DEFAULT_WEBSOCKET_HOST)
-        base_url = '{}{}'.format(host, '/api/v1/')
-
-        self.session = LagerSession(ctx, auth, base_url=base_url)
+        self.session = LagerSession(ctx, auth)
         self.defaults = defaults
         self.style = style
         self.ws_host = ws_host

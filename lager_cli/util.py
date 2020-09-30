@@ -52,7 +52,15 @@ def _do_exit(exit_code):
         click.secho('Gateway script forcibly killed due to timeout.', fg='red', err=True)
     sys.exit(exit_code)
 
-def _stream_python_output_v1(response, kill_python):
+def _echo_stdout(chunk):
+    click.echo(chunk, nl=False)
+    sys.stdout.flush()
+
+def _echo_stderr(chunk):
+    click.echo(chunk, err=True, nl=False)
+    sys.stderr.flush()
+
+def _stream_python_output_v1(response, kill_python, stdout_handler=None, stderr_handler=None):
     handler = functools.partial(sigint_handler, kill_python)
     signal.signal(signal.SIGINT, handler)
     sys.stdout.flush()
@@ -61,17 +69,15 @@ def _stream_python_output_v1(response, kill_python):
             exit_code = int(chunk.decode(), 10)
             _do_exit(exit_code)
         else:
-            if fileno == STDOUT_FILENO:
-                click.echo(chunk, nl=False)
-                sys.stdout.flush()
-            elif fileno == STDERR_FILENO:
-                click.echo(chunk, err=True, nl=False)
-                sys.stderr.flush()
+            if fileno == STDOUT_FILENO and stdout_handler:
+                stdout_handler(chunk)
+            elif fileno == STDERR_FILENO and stderr_handler:
+                stderr_handler(chunk)
 
 def stream_python_output(response, kill_python):
     version = response.headers.get('Lager-Output-Version')
     if version == '1':
-        _stream_python_output_v1(response, kill_python)
+        _stream_python_output_v1(response, kill_python, _echo_stdout, _echo_stderr)
     else:
         click.secho('Response format not supported. Please upgrade lager-cli', fg='red', err=True)
         sys.exit(1)

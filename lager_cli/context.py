@@ -101,7 +101,7 @@ class LagerSession(BaseUrlSession):
 
         r.raise_for_status()
 
-    def __init__(self, ctx, auth, *args, **kwargs):
+    def __init__(self, auth, *args, response_hook=None, **kwargs):
         host = os.getenv('LAGER_HOST', _DEFAULT_HOST)
         base_url = '{}{}'.format(host, '/api/v1/')
 
@@ -124,7 +124,8 @@ class LagerSession(BaseUrlSession):
             self.headers.update({'Lager-CI-System': ci_env.name})
 
         self.verify = verify
-        self.hooks['response'].append(functools.partial(LagerSession.handle_errors, ctx))
+        if response_hook:
+            self.hooks['response'].append(response_hook)
 
 
     def request(self, *args, **kwargs):
@@ -342,7 +343,8 @@ class LagerContext:  # pylint: disable=too-few-public-methods
     """
     def __init__(self, ctx, auth, defaults, debug, style):
         ws_host = os.getenv('LAGER_WS_HOST', _DEFAULT_WEBSOCKET_HOST)
-        self.session = LagerSession(ctx, auth)
+        response_hook = functools.partial(LagerSession.handle_errors, ctx)
+        self.session = LagerSession(auth, response_hook=response_hook)
         self.defaults = defaults
         self.style = style
         self.ws_host = ws_host

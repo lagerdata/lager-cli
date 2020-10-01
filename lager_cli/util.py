@@ -16,6 +16,7 @@ import trio
 import lager_trio_websocket as trio_websocket
 import wsproto.frame_protocol as wsframeproto
 from .matchers import iter_streams
+from .safe_unpickle import restricted_loads
 
 _FAILED_TO_RETRIEVE_EXIT_CODE = -1
 _SIGTERM_EXIT_CODE = 124
@@ -33,6 +34,7 @@ _ORIGINAL_SIGINT_HANDLER = signal.getsignal(signal.SIGINT)
 
 STDOUT_FILENO = 1
 STDERR_FILENO = 2
+OUTPUT_CHANNEL_FILENO = 3
 
 def sigint_handler(kill_python, _sig, _frame):
     """
@@ -60,10 +62,42 @@ def _echo_stderr(chunk):
     click.echo(chunk, err=True, nl=False)
     sys.stderr.flush()
 
-def _stream_python_output_v1(response, kill_python, stdout_handler=None, stderr_handler=None):
+def _output_handler(chunk):
+    print(f'Got a chunk: {chunk}')
+
+class OutputHandler:
+    def __init__(self, object_callback):
+        self.object_callback = object_callback
+        self.len = None
+        self.buffer = b''
+
+    def parse(self):
+        if self.len is None:
+            parts = self.buffer.split(b' ', 1)
+            if len(parts) == 1:
+                return
+            self.len = int(parts[0], 10)
+            self.buffer = parts[1]
+            return self.parse()
+
+        if len(self.buffer) >= self.len:
+            pickled = self.buffer[:self.len]
+            self.buffer = self.buffer[self.len:]
+            self.len = None
+            obj = restricted_loads(pickled)
+            self.object_callback(obj)
+            return self.parse()
+
+    def receive(self, chunk):
+        self.buffer += chunk
+        self.parse()
+
+
+def stream_python_output_v1(response, kill_python, stdout_handler=None, stderr_handler=None):
     handler = functools.partial(sigint_handler, kill_python)
     signal.signal(signal.SIGINT, handler)
     sys.stdout.flush()
+    output_handler = OutputHandler(click.echo)
     for (fileno, chunk) in iter_streams(response):
         if fileno == -1:
             exit_code = int(chunk.decode(), 10)
@@ -73,11 +107,13 @@ def _stream_python_output_v1(response, kill_python, stdout_handler=None, stderr_
                 stdout_handler(chunk)
             elif fileno == STDERR_FILENO and stderr_handler:
                 stderr_handler(chunk)
+            elif fileno == OUTPUT_CHANNEL_FILENO:
+                output_handler.receive(chunk)
 
 def stream_python_output(response, kill_python):
     version = response.headers.get('Lager-Output-Version')
     if version == '1':
-        _stream_python_output_v1(response, kill_python, _echo_stdout, _echo_stderr)
+        stream_python_output_v1(response, kill_python, _echo_stdout, _echo_stderr)
     else:
         click.secho('Response format not supported. Please upgrade lager-cli', fg='red', err=True)
         sys.exit(1)

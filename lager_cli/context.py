@@ -92,9 +92,7 @@ class LagerSession(BaseUrlSession):
             if error['code'] == 'gateway_timeout_error':
                 raise GatewayTimeoutError(error['description'])
 
-            if error['code'] == 'image_running':
-                click.echo('Script already running - please wait for it to finish or use `lager python --kill` to forcibly terminate it. ', err=True)
-            elif error['code'] in OPENOCD_ERROR_CODES:
+            if error['code'] in OPENOCD_ERROR_CODES:
                 print_openocd_error(error['description'])
             elif error['code'] in DOCKER_ERROR_CODES:
                 print_docker_error(ctx, error['description'])

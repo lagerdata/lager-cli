@@ -17,10 +17,11 @@ import lager_trio_websocket as trio_websocket
 import wsproto.frame_protocol as wsframeproto
 from .matchers import iter_streams
 from .safe_unpickle import restricted_loads
+from .exceptions import OutputFormatNotSupported
 
-_FAILED_TO_RETRIEVE_EXIT_CODE = -1
-_SIGTERM_EXIT_CODE = 124
-_SIGKILL_EXIT_CODE = 137
+FAILED_TO_RETRIEVE_EXIT_CODE = -1
+SIGTERM_EXIT_CODE = 124
+SIGKILL_EXIT_CODE = 137
 
 def stream_output(response, chunk_size=1):
     """
@@ -44,15 +45,6 @@ def sigint_handler(kill_python, _sig, _frame):
     click.echo(' Attempting to stop Lager Python job')
     signal.signal(signal.SIGINT, _ORIGINAL_SIGINT_HANDLER)
     kill_python(signal.SIGINT)
-
-def _do_exit(exit_code):
-    if exit_code == _FAILED_TO_RETRIEVE_EXIT_CODE:
-        click.secho('Failed to retrieve script exit code.', fg='red', err=True)
-    elif exit_code == _SIGTERM_EXIT_CODE:
-        click.secho('Gateway script terminated due to timeout.', fg='red', err=True)
-    elif exit_code == _SIGKILL_EXIT_CODE:
-        click.secho('Gateway script forcibly killed due to timeout.', fg='red', err=True)
-    sys.exit(exit_code)
 
 def _echo_stdout(chunk):
     click.echo(chunk, nl=False)
@@ -100,23 +92,20 @@ def stream_python_output_v1(response, kill_python, stdout_handler=None, stderr_h
     output_handler = OutputHandler(click.echo)
     for (fileno, chunk) in iter_streams(response):
         if fileno == -1:
-            exit_code = int(chunk.decode(), 10)
-            _do_exit(exit_code)
-        else:
-            if fileno == STDOUT_FILENO and stdout_handler:
-                stdout_handler(chunk)
-            elif fileno == STDERR_FILENO and stderr_handler:
-                stderr_handler(chunk)
-            elif fileno == OUTPUT_CHANNEL_FILENO:
-                output_handler.receive(chunk)
+            return int(chunk.decode(), 10)
+
+        if fileno == STDOUT_FILENO and stdout_handler:
+            stdout_handler(chunk)
+        elif fileno == STDERR_FILENO and stderr_handler:
+            stderr_handler(chunk)
+        elif fileno == OUTPUT_CHANNEL_FILENO:
+            output_handler.receive(chunk)
 
 def stream_python_output(response, kill_python):
     version = response.headers.get('Lager-Output-Version')
     if version == '1':
-        stream_python_output_v1(response, kill_python, _echo_stdout, _echo_stderr)
-    else:
-        click.secho('Response format not supported. Please upgrade lager-cli', fg='red', err=True)
-        sys.exit(1)
+        return stream_python_output_v1(response, kill_python, _echo_stdout, _echo_stderr)
+    raise OutputFormatNotSupported
 
 async def heartbeat(websocket, timeout, interval):
     '''

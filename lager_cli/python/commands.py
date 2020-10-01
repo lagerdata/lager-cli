@@ -4,13 +4,20 @@
     Commands for flashing a DUT
 """
 import os
+import sys
 import itertools
 import functools
 import signal
 import click
 from ..context import get_default_gateway
-from ..util import stream_python_output, zip_dir, SizeLimitExceeded
+from ..util import (
+    stream_python_output, zip_dir, SizeLimitExceeded,
+    FAILED_TO_RETRIEVE_EXIT_CODE,
+    SIGTERM_EXIT_CODE,
+    SIGKILL_EXIT_CODE,
+)
 from ..paramtypes import EnvVarType
+from ..exceptions import OutputFormatNotSupported
 
 MAX_ZIP_SIZE = 10_000_000  # Max size of zipped folder in bytes
 
@@ -79,4 +86,16 @@ def python(ctx, runnable, gateway, image, env, passenv, kill, signum, timeout):
 
     resp = session.run_python(gateway, files=post_data)
     kill_python = functools.partial(session.kill_python, gateway)
-    stream_python_output(resp, kill_python)
+    try:
+        exit_code = stream_python_output(resp, kill_python)
+    except OutputFormatNotSupported:
+        click.secho('Response format not supported. Please upgrade lager-cli', fg='red', err=True)
+        sys.exit(1)
+
+    if exit_code == FAILED_TO_RETRIEVE_EXIT_CODE:
+        click.secho('Failed to retrieve script exit code.', fg='red', err=True)
+    elif exit_code == SIGTERM_EXIT_CODE:
+        click.secho('Gateway script terminated due to timeout.', fg='red', err=True)
+    elif exit_code == SIGKILL_EXIT_CODE:
+        click.secho('Gateway script forcibly killed due to timeout.', fg='red', err=True)
+    sys.exit(exit_code)

@@ -16,7 +16,7 @@ MAX_ZIP_SIZE = 10_000_000  # Max size of zipped folder in bytes
 
 @click.command()
 @click.pass_context
-@click.argument('runnable', required=True, type=click.Path(exists=True))
+@click.argument('runnable', required=False, type=click.Path(exists=True))
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.option('--image', default='lagerdata/gatewaypy3:v0.1.37', help='Docker image to use for running script')
 @click.option(
@@ -36,6 +36,9 @@ def python(ctx, runnable, gateway, image, env, passenv, kill, signum, timeout):
     """
         Run a python script on the gateway
     """
+    if not runnable and not kill:
+        raise click.UsageError('Please supply a RUNNABLE or the --kill option')
+
     session = ctx.obj.session
     if gateway is None:
         gateway = get_default_gateway(ctx)

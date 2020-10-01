@@ -6,6 +6,7 @@
 import os
 import itertools
 import functools
+import signal
 import click
 from ..context import get_default_gateway
 from ..util import stream_python_output, zip_dir, SizeLimitExceeded
@@ -29,8 +30,9 @@ MAX_ZIP_SIZE = 10_000_000  # Max size of zipped folder in bytes
     'command line. Example: `--passenv FOO` will set an environment variable named `FOO` in the python script to the value'
     'of `FOO` in the current environment.')
 @click.option('--kill', is_flag=True, default=False, help='Terminate a running python script')
+@click.option('--signal', 'signum', type=click.INT, default=signal.SIGTERM, help='Signal to use with --kill', show_default=True)
 @click.option('--timeout', type=click.INT, required=False, help='Max runtime in seconds for the python script')
-def python(ctx, runnable, gateway, image, env, passenv, kill, timeout):
+def python(ctx, runnable, gateway, image, env, passenv, kill, signum, timeout):
     """
         Run a python script on the gateway
     """
@@ -39,7 +41,7 @@ def python(ctx, runnable, gateway, image, env, passenv, kill, timeout):
         gateway = get_default_gateway(ctx)
 
     if kill:
-        resp = session.kill_python(gateway).json()
+        resp = session.kill_python(gateway, signum)
         resp.raise_for_status()
         return
 

@@ -7,6 +7,7 @@ from enum import Enum
 import functools
 import os
 import json
+import signal
 import ssl
 import urllib.parse
 import urllib3
@@ -181,12 +182,12 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/run-python'.format(quote(gateway))
         return self.post(url, files=files, stream=True)
 
-    def kill_python(self, gateway, sig):
+    def kill_python(self, gateway, sig=signal.SIGTERM):
         """
             Run python on a gateway
         """
         url = 'gateway/{}/kill-python'.format(quote(gateway))
-        return self.post(url, json={'signal': sig}, stream=True)
+        return self.post(url, json={'signal': sig})
 
     def gateway_hello(self, gateway):
         """

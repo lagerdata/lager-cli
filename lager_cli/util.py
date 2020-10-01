@@ -7,10 +7,8 @@ import sys
 import math
 import pathlib
 import os
-import functools
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 from io import BytesIO
-import signal
 import click
 import trio
 import lager_trio_websocket as trio_websocket
@@ -31,20 +29,9 @@ def stream_output(response, chunk_size=1):
         click.echo(chunk, nl=False)
         sys.stdout.flush()
 
-_ORIGINAL_SIGINT_HANDLER = signal.getsignal(signal.SIGINT)
-
 STDOUT_FILENO = 1
 STDERR_FILENO = 2
 OUTPUT_CHANNEL_FILENO = 3
-
-def sigint_handler(kill_python, _sig, _frame):
-    """
-        Handle Ctrl+C by restoring the old signal handler (so that subsequent Ctrl+C will actually
-        stop python), and send the SIGTERM to the running docker container.
-    """
-    click.echo(' Attempting to stop Lager Python job')
-    signal.signal(signal.SIGINT, _ORIGINAL_SIGINT_HANDLER)
-    kill_python(signal.SIGINT)
 
 def _echo_stdout(chunk):
     click.echo(chunk, nl=False)
@@ -85,10 +72,7 @@ class OutputHandler:
         self.parse()
 
 
-def stream_python_output_v1(response, kill_python, stdout_handler=None, stderr_handler=None):
-    handler = functools.partial(sigint_handler, kill_python)
-    signal.signal(signal.SIGINT, handler)
-    sys.stdout.flush()
+def stream_python_output_v1(response, stdout_handler=None, stderr_handler=None):
     output_handler = OutputHandler(click.echo)
     for (fileno, chunk) in iter_streams(response):
         if fileno == -1:
@@ -101,10 +85,10 @@ def stream_python_output_v1(response, kill_python, stdout_handler=None, stderr_h
         elif fileno == OUTPUT_CHANNEL_FILENO:
             output_handler.receive(chunk)
 
-def stream_python_output(response, kill_python):
+def stream_python_output(response):
     version = response.headers.get('Lager-Output-Version')
     if version == '1':
-        return stream_python_output_v1(response, kill_python, _echo_stdout, _echo_stderr)
+        return stream_python_output_v1(response, _echo_stdout, _echo_stderr)
     raise OutputFormatNotSupported
 
 async def heartbeat(websocket, timeout, interval):

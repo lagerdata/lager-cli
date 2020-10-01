@@ -21,6 +21,18 @@ from ..exceptions import OutputFormatNotSupported
 
 MAX_ZIP_SIZE = 10_000_000  # Max size of zipped folder in bytes
 
+_ORIGINAL_SIGINT_HANDLER = signal.getsignal(signal.SIGINT)
+
+def sigint_handler(kill_python, _sig, _frame):
+    """
+        Handle Ctrl+C by restoring the old signal handler (so that subsequent Ctrl+C will actually
+        stop python), and send the SIGTERM to the running docker container.
+    """
+    click.echo(' Attempting to stop Lager Python job')
+    signal.signal(signal.SIGINT, _ORIGINAL_SIGINT_HANDLER)
+    kill_python(signal.SIGINT)
+
+
 @click.command()
 @click.pass_context
 @click.argument('runnable', required=False, type=click.Path(exists=True))
@@ -86,8 +98,11 @@ def python(ctx, runnable, gateway, image, env, passenv, kill, signum, timeout):
 
     resp = session.run_python(gateway, files=post_data)
     kill_python = functools.partial(session.kill_python, gateway)
+    handler = functools.partial(sigint_handler, kill_python)
+    signal.signal(signal.SIGINT, handler)
+
     try:
-        exit_code = stream_python_output(resp, kill_python)
+        exit_code = stream_python_output(resp)
     except OutputFormatNotSupported:
         click.secho('Response format not supported. Please upgrade lager-cli', fg='red', err=True)
         sys.exit(1)

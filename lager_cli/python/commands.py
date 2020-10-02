@@ -15,6 +15,7 @@ from ..util import (
     FAILED_TO_RETRIEVE_EXIT_CODE,
     SIGTERM_EXIT_CODE,
     SIGKILL_EXIT_CODE,
+    StreamDatatypes,
 )
 from ..paramtypes import EnvVarType
 from ..exceptions import OutputFormatNotSupported
@@ -32,6 +33,14 @@ def sigint_handler(kill_python, _sig, _frame):
     signal.signal(signal.SIGINT, _ORIGINAL_SIGINT_HANDLER)
     kill_python(signal.SIGINT)
 
+def _do_exit(exit_code):
+    if exit_code == FAILED_TO_RETRIEVE_EXIT_CODE:
+        click.secho('Failed to retrieve script exit code.', fg='red', err=True)
+    elif exit_code == SIGTERM_EXIT_CODE:
+        click.secho('Gateway script terminated due to timeout.', fg='red', err=True)
+    elif exit_code == SIGKILL_EXIT_CODE:
+        click.secho('Gateway script forcibly killed due to timeout.', fg='red', err=True)
+    sys.exit(exit_code)
 
 @click.command()
 @click.pass_context
@@ -102,15 +111,16 @@ def python(ctx, runnable, gateway, image, env, passenv, kill, signum, timeout):
     signal.signal(signal.SIGINT, handler)
 
     try:
-        exit_code = stream_python_output(resp)
+        for (datatype, content) in stream_python_output(resp):
+            if datatype == StreamDatatypes.EXIT:
+                _do_exit(content)
+            elif datatype == StreamDatatypes.STDOUT:
+                click.echo(content, nl=False)
+            elif datatype == StreamDatatypes.STDERR:
+                click.echo(content, nl=False, err=True)
+            elif datatype == StreamDatatypes.OUTPUT:
+                click.echo(content)
+
     except OutputFormatNotSupported:
         click.secho('Response format not supported. Please upgrade lager-cli', fg='red', err=True)
         sys.exit(1)
-
-    if exit_code == FAILED_TO_RETRIEVE_EXIT_CODE:
-        click.secho('Failed to retrieve script exit code.', fg='red', err=True)
-    elif exit_code == SIGTERM_EXIT_CODE:
-        click.secho('Gateway script terminated due to timeout.', fg='red', err=True)
-    elif exit_code == SIGKILL_EXIT_CODE:
-        click.secho('Gateway script forcibly killed due to timeout.', fg='red', err=True)
-    sys.exit(exit_code)

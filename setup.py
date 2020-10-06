@@ -50,6 +50,7 @@ if __name__ == "__main__":
             multidict == 4.7.6
             outcome == 1.0.1
             python-dateutil == 2.8.1
+            PyYAML == 5.3.1
             requests == 2.23.0
             requests-toolbelt == 0.9.1
             six == 1.15.0

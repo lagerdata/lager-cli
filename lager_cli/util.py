@@ -8,6 +8,8 @@ import math
 import pathlib
 import enum
 import os
+import json
+import yaml
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 from io import BytesIO
 import click
@@ -47,14 +49,31 @@ class StreamDatatypes(enum.Enum):
     def __repr__(self):
         return '<%s.%s>' % (self.__class__.__name__, self.name)
 
+def identity(x):
+    return x
 
 class OutputHandler:
     def __init__(self):
+        self.encoder = None
         self.len = None
         self.buffer = b''
 
+    DECODERS = {
+        1: identity,
+        2: restricted_loads,
+        3: json.loads,
+        4: yaml.safe_load,
+    }
+
     def parse(self):
         while True:
+            if self.encoder is None:
+                parts = self.buffer.split(b' ', 1)
+                if len(parts) == 1:
+                    break
+                self.encoder = int(parts[0], 10)
+                self.buffer = parts[1]
+
             if self.len is None:
                 parts = self.buffer.split(b' ', 1)
                 if len(parts) == 1:
@@ -63,10 +82,12 @@ class OutputHandler:
                 self.buffer = parts[1]
 
             if len(self.buffer) >= self.len:
-                pickled = self.buffer[:self.len]
+                encoded = self.buffer[:self.len]
+                decoder = self.DECODERS[self.encoder]
                 self.buffer = self.buffer[self.len:]
+                self.encoder = None
                 self.len = None
-                yield (StreamDatatypes.OUTPUT, restricted_loads(pickled))
+                yield (StreamDatatypes.OUTPUT, decoder(encoded))
 
     def receive(self, chunk):
         self.buffer += chunk

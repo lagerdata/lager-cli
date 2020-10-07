@@ -100,7 +100,7 @@ def stream_python_output_v1(response, output_handler=None):
 
     for (fileno, chunk) in iter_streams(response):
         if fileno == EXIT_FILENO:
-            return (StreamDatatypes.EXIT, int(chunk.decode(), 10))
+            yield (StreamDatatypes.EXIT, int(chunk.decode(), 10))
 
         if fileno == STDOUT_FILENO:
             yield (StreamDatatypes.STDOUT, chunk)

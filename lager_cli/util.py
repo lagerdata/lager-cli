@@ -37,6 +37,12 @@ STDOUT_FILENO = 1
 STDERR_FILENO = 2
 OUTPUT_CHANNEL_FILENO = 3
 
+def stdout_is_stderr():
+    """
+        Determine if stdout and stderr are going to the same place
+    """
+    return os.stat(STDOUT_FILENO) == os.stat(STDERR_FILENO)
+
 class StreamDatatypes(enum.Enum):
     """
         The various chunks that can be returned by Lager python

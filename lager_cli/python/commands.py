@@ -16,6 +16,7 @@ from ..util import (
     SIGTERM_EXIT_CODE,
     SIGKILL_EXIT_CODE,
     StreamDatatypes,
+    stdout_is_stderr,
 )
 from ..paramtypes import EnvVarType
 from ..exceptions import OutputFormatNotSupported
@@ -78,6 +79,7 @@ def python(ctx, runnable, gateway, image, env, passenv, kill, signum, timeout):
 
     post_data = [
         ('image', image),
+        ('stdout_is_stderr', stdout_is_stderr()),
     ]
     post_data.extend(
         zip(itertools.repeat('env'), env)

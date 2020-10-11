@@ -9,9 +9,9 @@ import pathlib
 import enum
 import os
 import json
-import yaml
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 from io import BytesIO
+import yaml
 import click
 import trio
 import lager_trio_websocket as trio_websocket

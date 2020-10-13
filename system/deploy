@@ -24,4 +24,4 @@ rm -rf ./build/html
 make html
 
 cd build/html
-aws s3 sync . s3://lager-docs/lager-cli/
+aws s3 sync --acl public-read . s3://lager-docs/lager-cli/

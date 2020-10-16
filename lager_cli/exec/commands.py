@@ -36,6 +36,8 @@ def _run_command_host(section, path, cmd_to_run, extra_args, debug):
     base_command.extend([
         '-v',
         f'{source_dir}:{mount_dir}',
+        '-w',
+        mount_dir,
         image,
         shell,
         '-c',

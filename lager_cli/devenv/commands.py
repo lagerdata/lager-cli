@@ -39,12 +39,17 @@ existing_dir_type = click.Path(
 @click.option('--image', prompt='Docker image', default='lagerdata/devenv-cortexm', show_default=True)
 @click.option('--mount-dir', prompt='Source code mount directory in docker container',
               default='/app', show_default=True)
-@click.option('--shell', prompt='Path to shell executable in docker image',
-              default='/bin/bash', show_default=True)
+@click.option('--shell', help='Path to shell executable in docker image', default=None)
 def create(ctx, image, mount_dir, shell):
     """
         Create a development environment
     """
+    if shell is None:
+        if image.startswith('lagerdata/'):
+            shell = '/bin/bash'
+        else:
+            shell = click.prompt('Path to shell executable in docker image', default='/bin/bash')
+
     config_path = find_devenv_config_path()
     if config_path is not None:
         answer = click.confirm('Config file {} exists; overwrite?'.format(config_path))

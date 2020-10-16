@@ -8,9 +8,11 @@ import os
 import click
 from ..config import (
     write_config_file,
+    get_global_config_file_path,
     add_devenv_command,
     get_devenv_config,
     DEVENV_SECTION_NAME,
+    LAGER_CONFIG_FILE_NAME,
 )
 from ..context import get_ci_environment, CIEnvironment, is_container_ci
 
@@ -19,9 +21,6 @@ def _run_command_host(section, path, cmd_to_run, extra_args, debug):
         Run a command from the host (which means, run it in a docker container)
     """
     full_command = ' '.join((cmd_to_run, *extra_args)).strip()
-    if full_command.startswith('lager'):
-        proc = subprocess.run(full_command, shell=True, check=False)
-        return proc.returncode
 
     image = section.get('image')
     source_dir = os.path.dirname(path)
@@ -33,6 +32,15 @@ def _run_command_host(section, path, cmd_to_run, extra_args, debug):
     env_strings = [f'--env={var}={os.environ[var]}' for var in env_vars]
     base_command = ['docker', 'run', '-it', '--rm']
     base_command.extend(env_strings)
+
+    global_config_path = get_global_config_file_path()
+    if os.path.exists(global_config_path):
+        base_command.extend([
+            '--env=LAGER_CONFIG_FILE_DIR=/lager',
+            '-v',
+            f'{global_config_path}:/lager/{LAGER_CONFIG_FILE_NAME}'
+        ])
+
     base_command.extend([
         '-v',
         f'{source_dir}:{mount_dir}',

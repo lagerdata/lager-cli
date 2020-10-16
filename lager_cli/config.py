@@ -8,12 +8,14 @@ import configparser
 import click
 
 DEFAULT_CONFIG_FILE_NAME = '.lager'
-_LAGER_CONFIG_FILE_NAME = os.getenv('LAGER_CONFIG_FILE_NAME', DEFAULT_CONFIG_FILE_NAME)
+LAGER_CONFIG_FILE_NAME = os.getenv('LAGER_CONFIG_FILE_NAME', DEFAULT_CONFIG_FILE_NAME)
 
 DEVENV_SECTION_NAME = 'DEVENV'
 
 
-def _get_global_config_file_path():
+def get_global_config_file_path():
+    if 'LAGER_CONFIG_FILE_DIR' in os.environ:
+        return make_config_path(os.getenv('LAGER_CONFIG_FILE_DIR'))
     return make_config_path(os.path.expanduser('~'))
 
 def make_config_path(directory, config_file_name=None):
@@ -21,7 +23,7 @@ def make_config_path(directory, config_file_name=None):
         Make a full path to a lager config file
     """
     if config_file_name is None:
-        config_file_name = _LAGER_CONFIG_FILE_NAME
+        config_file_name = LAGER_CONFIG_FILE_NAME
 
     return os.path.join(directory, config_file_name)
 
@@ -40,7 +42,7 @@ def _find_config_files():
     """
     cwd = os.getcwd()
     cfgs = []
-    global_config_file_path = _get_global_config_file_path()
+    global_config_file_path = get_global_config_file_path()
     while True:
         config_path = make_config_path(cwd)
         if os.path.exists(config_path) and config_path != global_config_file_path:
@@ -58,7 +60,7 @@ def read_config_file(path=None):
         Read our config file into `config` object
     """
     if path is None:
-        path = _get_global_config_file_path()
+        path = get_global_config_file_path()
     config = configparser.SafeConfigParser()
     try:
         with open(path) as f:
@@ -75,7 +77,7 @@ def write_config_file(config, path=None):
         Write out `config` into our config file
     """
     if path is None:
-        path = _get_global_config_file_path()
+        path = get_global_config_file_path()
     with open(path, 'w') as f:
         config.write(f)
 
@@ -113,7 +115,7 @@ def get_devenv_config():
     """
     config_path = find_devenv_config_path()
     if config_path is None:
-        click.echo(f'Could not find {_LAGER_CONFIG_FILE_NAME} in {os.getcwd()} or any parent directories', err=True)
+        click.echo(f'Could not find {LAGER_CONFIG_FILE_NAME} in {os.getcwd()} or any parent directories', err=True)
         click.get_current_context().exit(1)
     config = read_config_file(config_path)
     return config_path, config

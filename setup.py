@@ -40,7 +40,7 @@ if __name__ == "__main__":
         install_requires='''
             async-generator == 1.10
             bson == 0.5.10
-            certifi == 2020.4.5.1
+            certifi == 2020.6.20
             chardet == 3.0.4
             click == 7.1.2
             colorama == 0.4.3

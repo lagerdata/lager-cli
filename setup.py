@@ -15,7 +15,7 @@ author = 'Lager Data LLC'
 email = 'hello@lagerdata.com'
 classifiers = [
     'Development Status :: 3 - Alpha',
-    'License :: OSI Approved :: MIT License',
+    'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         author_email=email,
         maintainer=author,
         maintainer_email=email,
-        license='MIT',
+        license='AGPLv3',
         python_requires=">=3.6",
         packages=setuptools.find_packages(),
         install_requires='''

@@ -4,18 +4,10 @@
     Commands for controlling the wifi network
 """
 
-import sys
-import math
 import click
 from texttable import Texttable
 
 from ..context import get_default_gateway
-from ..status import run_job_output
-from ..config import read_config_file
-
-import click
-from ..context import get_default_gateway
-
 
 @click.group(name='wifi')
 def _wifi():

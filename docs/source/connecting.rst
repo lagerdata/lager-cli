@@ -22,12 +22,12 @@ Identifies the Device Under Test which is connected to your gateway. See below f
 ``--transport``
 ~~~~~~~~~~~~~~~
 
-TODO
+Debug transport protocol. Available options are ``swd``, ``jtag``, or ``hla_swd``. Defaults to ``swd``. Example: ``lager connect --device nrf52 --transport swd``
 
 ``--interface``
 ~~~~~~~~~~~~~~~
 
-TODO
+Debug interface driver. Available options are ``ftdi``, ``jlink``, ``cmsis-dap``, ``xds110``, ``stlink``, or ``stlink-dap``. Defaults to ``ftdi``. Example: ``lager connect --device nrf52 --interface ftdi``
 
 ``--speed``
 ~~~~~~~~~~~~

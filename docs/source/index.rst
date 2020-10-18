@@ -7,6 +7,7 @@ Lager Client Documentation
    :caption: Contents:
 
    quickstart
+   devenvs
    connecting
    recipes
    command_reference

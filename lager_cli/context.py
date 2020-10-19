@@ -9,6 +9,9 @@ import os
 import json
 import signal
 import ssl
+
+from uuid import uuid4
+
 import urllib.parse
 import urllib3
 import requests
@@ -119,7 +122,10 @@ class LagerSession(BaseUrlSession):
                 'Authorization': '{} {}'.format(auth['type'], auth['token'])
             }
             self.headers.update(auth_header)
-        self.headers.update({'Lager-Version': __version__})
+        self.headers.update({
+            'Lager-Version': __version__,
+            'Lager-Invocation-Id': str(uuid4()),
+            })
         ci_env = get_ci_environment()
         if ci_env == CIEnvironment.HOST:
             self.headers.update({'Lager-CI-Active': 'False'})
@@ -136,6 +142,11 @@ class LagerSession(BaseUrlSession):
         """
             Catch connection errors so they can be handled more cleanly
         """
+
+        if 'headers' not in kwargs:
+            kwargs['headers'] = {}
+        kwargs['headers'].update({'Lager-Request-Id': str(uuid4())})
+
         try:
             return super().request(*args, **kwargs)
         except requests.exceptions.ConnectTimeout:

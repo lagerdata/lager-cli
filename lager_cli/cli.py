@@ -18,6 +18,7 @@ from .setter.commands import setter
 from .lister.commands import lister
 from .auth import load_auth
 from .auth.commands import login, logout
+from .canbus.commands import canbus
 from .job.commands import job
 from .devenv.commands import devenv
 from .exec.commands import exec_
@@ -67,6 +68,7 @@ cli.add_command(setter)
 cli.add_command(lister)
 cli.add_command(login)
 cli.add_command(logout)
+cli.add_command(canbus)
 cli.add_command(job)
 cli.add_command(devenv)
 cli.add_command(exec_)

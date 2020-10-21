@@ -55,12 +55,28 @@ def print_docker_error(ctx, error):
     click.echo(stderr, err=True, nl=False)
     ctx.exit(parsed['returncode'])
 
-OPENOCD_ERROR_CODES = set((
-    'openocd_start_failed',
-))
+def print_canbus_error(ctx, error):
+    if not error:
+        return
+    parsed = json.loads(error)
+    if parsed['stdout']:
+        click.secho(parsed['stdout'], fg='red', nl=False)
+    if parsed['stderr']:
+        click.secho(parsed['stderr'], fg='red', err=True, nl=False)
+        if parsed['stderr'] == 'Cannot find device "can0"\n':
+            click.secho('Please check adapter connection', fg='red', err=True)
 
-DOCKER_ERROR_CODES = set((
-))
+
+OPENOCD_ERROR_CODES = {
+    'openocd_start_failed',
+}
+
+DOCKER_ERROR_CODES = set()
+
+CANBUS_ERROR_CODES = {
+    'canbus_up_failed',
+}
+
 
 def quote(gateway):
     return urllib.parse.quote(str(gateway), safe='')
@@ -99,6 +115,8 @@ class LagerSession(BaseUrlSession):
                 print_openocd_error(error['description'])
             elif error['code'] in DOCKER_ERROR_CODES:
                 print_docker_error(ctx, error['description'])
+            elif error['code'] in CANBUS_ERROR_CODES:
+                print_canbus_error(ctx, error['description'])
             else:
                 click.secho(error['description'], fg='red', err=True)
             ctx.exit(1)
@@ -351,6 +369,11 @@ class LagerSession(BaseUrlSession):
         """
         url = 'gateway/{}/wifi/delete-connection'.format(quote(gateway))
         return self.post(url, json={'ssid': ssid})
+
+    def can_up(self, gateway, bitrate):
+        url = 'gateway/{}/canbus/up'.format(quote(gateway))
+        return self.post(url, json={'bitrate': bitrate})
+
 
 class LagerContext:  # pylint: disable=too-few-public-methods
     """

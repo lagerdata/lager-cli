@@ -4,6 +4,7 @@
     Run commands in a docker container
 """
 import subprocess
+import platform
 import os
 import click
 from ..config import (
@@ -97,8 +98,13 @@ def exec_(ctx, cmd_name, extra_args, command, save_as, warn):
     section = config[DEVENV_SECTION_NAME]
 
     if cmd_name and command:
+        osname = platform.system()
+        if osname == 'Windows':
+            msg = 'If the command contains spaces, please wrap it in double quotes e.g. lager exec --command "ls -la"'
+        else:
+            msg = 'If the command contains spaces, please wrap it in single quotes e.g. lager exec --command \'ls -la\''
         raise click.UsageError(
-            'Cannot specify a command name and a command'
+            f'Cannot specify a command name and a command\n{msg}'
         )
 
     if cmd_name:

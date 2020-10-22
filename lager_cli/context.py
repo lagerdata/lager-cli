@@ -374,6 +374,10 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/canbus/up'.format(quote(gateway))
         return self.post(url, json={'bitrate': bitrate})
 
+    def can_send(self, gateway, frames):
+        url = 'gateway/{}/canbus/send'.format(quote(gateway))
+        return self.post(url, json={'frames': [frame._asdict() for frame in frames]})
+
 
 class LagerContext:  # pylint: disable=too-few-public-methods
     """

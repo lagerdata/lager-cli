@@ -121,3 +121,73 @@ class BinfileType(click.ParamType):
 
     def __repr__(self):
         return 'BINFILE'
+
+        # CAN_FRAME format:
+
+        # \b
+        # <can_id>#{R|data}
+        #     for CAN 2.0 frames
+
+        # \b
+        # <can_id>##<flags>{data}
+        #     for CAN FD frames
+
+        # \b
+        # <can_id>:
+        #     can have 3 (SFF) or 8 (EFF) hex chars
+
+        # \b
+        # {data}:
+        #     has 0..8 (0..64 CAN FD) ASCII hex-values (optionally separated by '.')
+
+        # \b
+        # <flags>:
+        #     a single ASCII Hex value (0 .. F) which defines canfd_frame.flags
+
+        # \b
+        # CAN_FRAME Examples:
+
+
+
+CanFrame = collections.namedtuple('CanFrame', ['can_id', 'is_fd', 'is_remote_frame', 'flags', 'data'])
+
+def parse_can_data(data_str):
+    parts = data_str.split('.')
+    return list(b''.join([bytes.fromhex(part) for part in parts]))
+
+def parse_can2(value):
+    can_id, rest = value.split('#')
+    can_id = int(can_id, 16)
+    if rest == 'R':
+        is_remote_frame = True
+        data = None
+    else:
+        is_remote_frame = False
+        data = parse_can_data(rest)
+    return CanFrame(can_id=can_id, is_fd=False, is_remote_frame=is_remote_frame, data=data, flags=None)
+
+def parse_canfd(value):
+    can_id, rest = value.split('##')
+    can_id = int(can_id, 16)
+    flags = int(rest[0:1], 16)
+    data = parse_can_data(rest[1:])
+    return CanFrame(can_id=can_id, is_fd=True, is_remote_frame=False, data=data, flags=flags)
+
+class CanFrameType(click.ParamType):
+    """
+        Type to represent a command line argument for a CAN frame
+    """
+    name = 'CANFrame'
+
+    def convert(self, value, param, ctx):
+        """
+            Parse out a CAN frame
+        """
+        if '#' in value:
+            return parse_can2(value)
+        if '##' in value:
+            return parse_canfd(value)
+        raise ValueError('Invalid CAN frame.\nSee `lager canbus send --help` for format and examples.')
+
+    def __repr__(self):
+        return 'CAN_FRAME'

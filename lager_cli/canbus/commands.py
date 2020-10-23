@@ -3,10 +3,11 @@
 
     Commands for canbus
 """
+import math
 import click
-import json
 from ..context import get_default_gateway
 from ..paramtypes import CanFrameType
+from ..status import run_job_output
 
 @click.group(name='canbus')
 def canbus():
@@ -73,3 +74,22 @@ def send(ctx, gateway, can_frames):
     resp = session.can_send(gateway, can_frames)
     print(resp.json())
 
+
+@canbus.command()
+@click.pass_context
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+def dump(ctx, gateway):
+    """
+        Dump CAN bus traffic (use Ctrl-C to terminate)
+    """
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
+
+    session = ctx.obj.session
+    can_options = {
+    }
+    can_session = session.can_dump(gateway, can_options).json()
+    job_id = can_session['test_run']['id']
+
+    connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
+    run_job_output(connection_params, None, False, math.inf, math.inf, None, ctx.obj.debug)

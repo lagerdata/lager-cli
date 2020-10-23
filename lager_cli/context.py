@@ -371,12 +371,25 @@ class LagerSession(BaseUrlSession):
         return self.post(url, json={'ssid': ssid})
 
     def can_up(self, gateway, bitrate):
+        """
+            Bring up the CAN bus
+        """
         url = 'gateway/{}/canbus/up'.format(quote(gateway))
         return self.post(url, json={'bitrate': bitrate})
 
     def can_send(self, gateway, frames):
+        """
+            Send one or more frames on CAN bus
+        """
         url = 'gateway/{}/canbus/send'.format(quote(gateway))
         return self.post(url, json={'frames': [frame._asdict() for frame in frames]})
+
+    def can_dump(self, gateway, can_options):
+        """
+            Dump frames from CAN bus
+        """
+        url = 'gateway/{}/canbus/dump'.format(quote(gateway))
+        return self.post(url, json={'can_options': can_options})
 
 
 class LagerContext:  # pylint: disable=too-few-public-methods

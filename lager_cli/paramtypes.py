@@ -158,6 +158,12 @@ CanFrame = collections.namedtuple('CanFrame', [
     'data',
 ])
 
+CanFilter = collections.namedtuple('CanFilter', [
+    'can_id',
+    'can_mask',
+    'extended',
+])
+
 def parse_can_data(data_str):
     parts = data_str.split('.')
     return list(b''.join([bytes.fromhex(part) for part in parts]))
@@ -214,3 +220,29 @@ class CanFrameType(click.ParamType):
 
     def __repr__(self):
         return 'CAN_FRAME'
+
+
+class CanFilterType(click.ParamType):
+    """
+        Type to represent a command line argument for a CAN frame
+    """
+    name = 'CANFilter'
+
+    def convert(self, value, param, ctx):
+        """
+            Parse out a CAN frame
+        """
+        try:
+            can_id, can_mask = value.split(':')
+            if len(can_id) not in (3, 8):
+                self.fail('Filter can_id must be 3 or 8 hexadecimal digits')
+            extended = len(can_id) == 8
+            can_id = int(can_id, 16)
+            can_mask = int(can_mask, 16)
+        except ValueError:
+            self.fail('Invalid filter format.\nSee lager canbus dump --help')
+
+        return CanFilter(can_id=can_id, can_mask=can_mask, extended=extended)
+
+    def __repr__(self):
+        return 'CAN_FILTER'

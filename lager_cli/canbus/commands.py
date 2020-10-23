@@ -6,7 +6,7 @@
 import math
 import click
 from ..context import get_default_gateway
-from ..paramtypes import CanFrameType
+from ..paramtypes import CanFrameType, CanFilterType
 from ..status import run_job_output
 
 @click.group(name='canbus')
@@ -78,15 +78,35 @@ def send(ctx, gateway, can_frames):
 @canbus.command()
 @click.pass_context
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
-def dump(ctx, gateway):
+@click.argument('filters', required=False, nargs=-1, type=CanFilterType())
+def dump(ctx, gateway, filters):
     """
         Dump CAN bus traffic (use Ctrl-C to terminate)
+
+        Zero or more filters can be specified in the format <can_id>:<can_mask>
+        (matches when <received_can_id> & mask == can_id & mask)
+
+
+        CAN IDs and masks are given and expected in hexadecimal values.  When can_id
+        and  can_mask  are  both  8  digits, they are assumed to be 29 bit EFF. Without any
+        filters all data frames are received ('0:0' default filter).
+
+        Examples:
+
+        \b
+        lager canbus dump 92345678:DFFFFFFF
+            (match only for extended CAN ID 12345678)
+
+        \b
+        lager canbus dump 123:7FF
+            (matches CAN ID 123 - including EFF and RTR frames)
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
 
     session = ctx.obj.session
     can_options = {
+        'filters': [canfilter._asdict() for canfilter in filters],
     }
     can_session = session.can_dump(gateway, can_options).json()
     job_id = can_session['test_run']['id']

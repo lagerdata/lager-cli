@@ -149,29 +149,52 @@ class BinfileType(click.ParamType):
 
 
 
-CanFrame = collections.namedtuple('CanFrame', ['can_id', 'is_fd', 'is_remote_frame', 'flags', 'data'])
+CanFrame = collections.namedtuple('CanFrame', [
+    'arbitration_id',
+    'is_fd',
+    'is_error_frame',
+    'is_remote_frame',
+    'is_extended_id',
+    'data',
+])
 
 def parse_can_data(data_str):
     parts = data_str.split('.')
     return list(b''.join([bytes.fromhex(part) for part in parts]))
 
 def parse_can2(value):
-    can_id, rest = value.split('#')
-    can_id = int(can_id, 16)
+    arbitration_id, rest = value.split('#')
+    arbitration_id = int(arbitration_id, 16)
     if rest == 'R':
         is_remote_frame = True
         data = None
     else:
         is_remote_frame = False
         data = parse_can_data(rest)
-    return CanFrame(can_id=can_id, is_fd=False, is_remote_frame=is_remote_frame, data=data, flags=None)
+    return CanFrame(
+        arbitration_id=arbitration_id,
+        is_fd=False,
+        is_error_frame=False,
+        is_remote_frame=is_remote_frame,
+        is_extended_id=False,
+        data=data,
+    )
+
 
 def parse_canfd(value):
-    can_id, rest = value.split('##')
-    can_id = int(can_id, 16)
+    arbitration_id, rest = value.split('##')
+    arbitration_id = int(arbitration_id, 16)
     flags = int(rest[0:1], 16)
     data = parse_can_data(rest[1:])
-    return CanFrame(can_id=can_id, is_fd=True, is_remote_frame=False, data=data, flags=flags)
+    return CanFrame(
+        arbitration_id=arbitration_id,
+        is_fd=True,
+        is_error_frame=False,
+        is_remote_frame=False,
+        is_extended_id=False,
+        data=data,
+        flags=flags,
+    )
 
 class CanFrameType(click.ParamType):
     """

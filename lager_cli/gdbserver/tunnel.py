@@ -98,6 +98,8 @@ async def local_connection_handler(session, gateway, remote_host, remote_port, g
             async with trio.open_nursery() as nursery:
                 nursery.start_soon(send_to_local_client, gateway_stream, gdb_client_stream, nursery)
                 nursery.start_soon(send_to_local_gateway, gateway_stream, gdb_client_stream, nursery)
+    except OSError:
+        click.secho('Failed to connect to gateway. Are you sure you\'re on the same network as your gateway?', fg='red', err=True)
     except Exception as exc:  # pylint: disable=broad-except
         logger.exception('Exception in connection_handler', exc_info=exc)
     finally:

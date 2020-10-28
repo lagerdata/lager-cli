@@ -112,4 +112,4 @@ def dump(ctx, gateway, filters):
     job_id = can_session['test_run']['id']
 
     connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
-    run_job_output(connection_params, None, False, math.inf, math.inf, None, ctx.obj.debug)
+    run_job_output(connection_params, None, False, None, math.inf, math.inf, None, ctx.obj.debug)

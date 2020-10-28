@@ -124,12 +124,13 @@ class TTYIO:
     """
         Class for doing I/O with a TTY managed by curses
     """
-    def __init__(self):
+    def __init__(self, line_ending=b''):
         stdscr = curses.initscr()
         curses.noecho()
         curses.cbreak()
         stdscr.keypad(True)
         self.stdscr = stdscr
+        self.line_ending = line_ending
 
     def shutdown(self):
         """
@@ -154,8 +155,12 @@ class TTYIO:
         char = self.stdscr.getch()
         if char == -1:
             raise EOFError
+
         if char <= 255:
-            return char.to_bytes(1, byteorder='little')
+            parsed = char.to_bytes(1, byteorder='little')
+            if char == 10:
+                return self.line_ending or parsed
+            return parsed
         return None
 
 class StandardIO:
@@ -190,14 +195,14 @@ class StandardIO:
 
 
 @retry(reraise=True, sleep=trio.sleep, stop=stop_after_attempt(4), wait=wait_fixed(2), retry=retry_if_exception_type(trio_websocket.ConnectionRejected))
-async def display_job_output(connection_params, test_runner, interactive, message_timeout, overall_timeout, eof_timeout):
+async def display_job_output(connection_params, test_runner, interactive, line_ending, message_timeout, overall_timeout, eof_timeout):
     """
         Display job output from websocket
     """
     (uri, kwargs) = connection_params
     match_class = test_matcher_factory(test_runner)
     if interactive:
-        io_source = TTYIO()
+        io_source = TTYIO(line_ending)
     else:
         io_source = StandardIO()
     try:
@@ -217,17 +222,26 @@ async def display_job_output(connection_params, test_runner, interactive, messag
         if io_source:
             io_source.shutdown()
 
-def run_job_output(connection_params, test_runner, interactive, message_timeout, overall_timeout, eof_timeout, debug=False):
+def run_job_output(connection_params, test_runner, interactive, line_ending, message_timeout, overall_timeout, eof_timeout, debug=False):
     """
         Run async task to get job output from websocket
     """
     if interactive and _CURSES_IMPORT_FAILED:
         click.echo(_CURSES_IMPORT_FAILED, err=True)
-        click.echo('Please install curses module before using --interactive')
+        click.echo('Please install the windows-curses module before using --interactive (pip install windows-curses)')
         click.get_current_context().exit(1)
 
+    if not line_ending:
+        line_ending = b''
+    elif line_ending == 'LF':
+        line_ending = b'\n'
+    elif line_ending == 'CRLF':
+        line_ending = b'\r\n'
+    else:
+        raise ValueError('Invalid line ending')
+
     try:
-        matcher = trio.run(display_job_output, connection_params, test_runner, interactive, message_timeout, overall_timeout, eof_timeout)
+        matcher = trio.run(display_job_output, connection_params, test_runner, interactive, line_ending, message_timeout, overall_timeout, eof_timeout)
         click.get_current_context().exit(matcher.exit_code)
     except trio.TooSlowError:
         suffix = '' if overall_timeout == 1 else 's'

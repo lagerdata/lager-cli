@@ -64,12 +64,14 @@ def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
 @click.option('--eof-timeout', default=None, type=click.FLOAT,
               help='Time in seconds to wait before closing connection after input EOF received')
 @click.option('--display-job-id', default=False, is_flag=True)
+@click.option('--line-ending', help='Line ending - select either CRLF (\\r\\n) or LF (\\n)', type=click.Choice(['CRLF', 'LF']), default='LF')
 def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts, dsrdtr,
-         test_runner, interactive, message_timeout, overall_timeout, eof_timeout, display_job_id):
+         test_runner, interactive, message_timeout, overall_timeout, eof_timeout, display_job_id, line_ending):
     """
         Connect to UART on a DUT.
     """
     if interactive:
+        test_runner = 'none'
         if not sys.stdin.isatty():
             click.echo('stdin is not a tty!', err=True)
             ctx.exit(1)
@@ -87,5 +89,5 @@ def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonx
         click.echo('Job id: {}'.format(job_id), err=True)
 
     connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
-    run_job_output(connection_params, test_runner, interactive, message_timeout, overall_timeout,
+    run_job_output(connection_params, test_runner, interactive, line_ending, message_timeout, overall_timeout,
         eof_timeout, ctx.obj.debug)

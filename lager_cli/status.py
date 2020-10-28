@@ -90,6 +90,7 @@ async def read_from_websocket(websocket, matcher, message_timeout, nursery):
 
 def reader_function(io, send_channel, trio_token):
     if platform.system() == 'Windows':
+        trio.from_thread.run(send_channel.send, {'type': 'EOF'}, trio_token=trio_token)
         return
     try:
         while True:

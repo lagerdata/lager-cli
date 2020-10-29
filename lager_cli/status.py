@@ -4,13 +4,15 @@
     Job status output functions
 """
 try:
-    _CURSES_IMPORT_FAILED = False
-    import curses
+    _TERMIOS_IMPORT_FAILED = False
+    import termios
+    import tty
 except (ImportError, ModuleNotFoundError) as exc:
-    _CURSES_IMPORT_FAILED = exc
+    _TERMIOS_IMPORT_FAILED = exc
 import platform
 import threading
 import sys
+import os
 import select
 from functools import partial
 import bson
@@ -128,46 +130,35 @@ class TTYIO:
         Class for doing I/O with a TTY managed by curses
     """
     def __init__(self, line_ending=b''):
-        stdscr = curses.initscr()
-        curses.noecho()
-        curses.cbreak()
-        stdscr.keypad(True)
-        stdscr.scrollok(True)
-        self.stdscr = stdscr
+        self.stdin_fileno = sys.stdin.fileno()
+        self.stdout_fileno = sys.stdout.fileno()
+        self.old_settings = termios.tcgetattr(self.stdin_fileno)
+        tty.setraw(self.stdin_fileno)
         self.line_ending = line_ending
 
     def shutdown(self):
         """
             Restore previous TTY settings
         """
-        curses.nocbreak()
-        self.stdscr.keypad(False)
-        curses.echo()
-        curses.endwin()
+        termios.tcsetattr(self.stdin_fileno, termios.TCSADRAIN, self.old_settings)
 
     def output(self, data):
         """
             Output some data to the TTY
         """
-        self.stdscr.addstr(data)
-        self.stdscr.refresh()
+        os.write(self.stdout_fileno, data)
 
     def read(self):
         """
             Read a key from the TTY
         """
-        char = self.stdscr.getch()
-        if char == -1:
+        char = os.read(self.stdin_fileno, 1)
+        if char == b'':
             raise EOFError
-        if char == 3:
+        if char == b'\x03':
             raise KeyboardInterrupt
 
-        if char <= 255:
-            parsed = char.to_bytes(1, byteorder='little')
-            if char == 10:
-                return self.line_ending or parsed
-            return parsed
-        return None
+        return char
 
 class StandardIO:
     """
@@ -237,9 +228,9 @@ def run_job_output(connection_params, test_runner, interactive, line_ending, mes
     """
         Run async task to get job output from websocket
     """
-    if interactive and _CURSES_IMPORT_FAILED:
-        click.echo(_CURSES_IMPORT_FAILED, err=True)
-        click.echo('Please install the windows-curses module before using --interactive (pip install windows-curses)')
+    if interactive and _TERMIOS_IMPORT_FAILED:
+        click.echo(_TERMIOS_IMPORT_FAILED, err=True)
+        click.echo('Interactive terminal not currently supported by Windows; please try running in Docker.', err=True)
         click.get_current_context().exit(1)
 
     if not line_ending:

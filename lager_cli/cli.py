@@ -103,7 +103,7 @@ def setup_context(ctx, debug, colorize, skip_auth):
 
         if not auth:
             click.echo('Please login using `lager login` first')
-            click.get_current_context().exit(0)
+            click.get_current_context().exit(1)
 
     config = read_config_file()
     ctx.obj = LagerContext(

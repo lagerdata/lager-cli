@@ -130,6 +130,7 @@ class TTYIO:
         curses.noecho()
         curses.cbreak()
         stdscr.keypad(True)
+        stdscr.scrollok(True)
         self.stdscr = stdscr
         self.line_ending = line_ending
 

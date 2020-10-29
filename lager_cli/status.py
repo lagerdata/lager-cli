@@ -89,9 +89,6 @@ async def read_from_websocket(websocket, matcher, message_timeout, nursery):
         nursery.cancel_scope.cancel()
 
 def reader_function(io, send_channel, trio_token):
-    if platform.system() == 'Windows':
-        trio.from_thread.run(send_channel.send, {'type': 'EOF'}, trio_token=trio_token)
-        return
     try:
         while True:
             data = io.read()
@@ -211,11 +208,15 @@ async def display_job_output(connection_params, test_runner, interactive, line_e
     try:
         matcher = match_class(io_source)
         send_channel, receive_channel = trio.open_memory_channel(0)
+        allow_reader = True
+        if platform.system() == 'Windows' and not interactive:
+            allow_reader = False
         with trio.fail_after(overall_timeout):
             async with open_websocket_url(uri, disconnect_timeout=1, **kwargs) as websocket:
-                token = trio.lowlevel.current_trio_token()
-                thread = threading.Thread(target=reader_function, args=(io_source, send_channel, token), daemon=True)
-                thread.start()
+                if allow_reader:
+                    token = trio.lowlevel.current_trio_token()
+                    thread = threading.Thread(target=reader_function, args=(io_source, send_channel, token), daemon=True)
+                    thread.start()
                 async with trio.open_nursery() as nursery:
                     nursery.start_soon(heartbeat, websocket, 30, 30)
                     nursery.start_soon(read_from_websocket, websocket, matcher, message_timeout, nursery)

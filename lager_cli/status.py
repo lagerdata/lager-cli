@@ -96,6 +96,8 @@ def reader_function(io, send_channel, trio_token):
                 trio.from_thread.run(send_channel.send, {'type': 'data', 'value': data}, trio_token=trio_token)
     except EOFError:
         trio.from_thread.run(send_channel.send, {'type': 'EOF'}, trio_token=trio_token)
+    except KeyboardInterrupt:
+        trio.from_thread.run(send_channel.send, {'type': 'Ctrl+C'}, trio_token=trio_token)
 
 
 async def write_to_websocket(websocket, receive_channel, eof_timeout, nursery):
@@ -106,6 +108,9 @@ async def write_to_websocket(websocket, receive_channel, eof_timeout, nursery):
                 await trio.sleep(eof_timeout)
                 await websocket.aclose()
             return
+
+        if message['type'] == 'Ctrl+C':
+            raise KeyboardInterrupt
 
         if message['type'] == 'data':
             data = message['value']
@@ -154,6 +159,8 @@ class TTYIO:
         char = self.stdscr.getch()
         if char == -1:
             raise EOFError
+        if char == 3:
+            raise KeyboardInterrupt
 
         if char <= 255:
             parsed = char.to_bytes(1, byteorder='little')

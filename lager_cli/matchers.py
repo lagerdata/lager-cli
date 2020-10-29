@@ -109,6 +109,7 @@ class UnityMatcher:
                     echo_line(line, 'yellow')
                 else:
                     click.echo(line)
+                sys.stdout.flush()
 
     def done(self):
         pass

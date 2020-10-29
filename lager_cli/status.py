@@ -179,6 +179,7 @@ class StandardIO:
             Send some data to stdout
         """
         click.echo(data, nl=False)
+        sys.stdout.flush()
 
     def read(self):
         """

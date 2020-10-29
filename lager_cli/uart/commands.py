@@ -55,8 +55,8 @@ def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
 @click.option('--xonxoff/--no-xonxoff', default=None, help='Enable/disable software XON/XOFF flow control')
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
-@click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['none', 'unity']), default='unity')
-@click.option('--interactive', is_flag=True, help='Run as an interactive TTY session', default=False)
+@click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['none', 'unity']), default='none')
+@click.option('-i', '--interactive', is_flag=True, help='Run as an interactive TTY session', default=False)
 @click.option('--message-timeout', default=math.inf, type=click.FLOAT,
               help='Max time in seconds to wait between messages from API.')
 @click.option('--overall-timeout', default=math.inf, type=click.FLOAT,
@@ -71,7 +71,6 @@ def uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonx
         Connect to UART on a DUT.
     """
     if interactive:
-        test_runner = 'none'
         if not sys.stdin.isatty():
             click.echo('stdin is not a tty!', err=True)
             ctx.exit(1)

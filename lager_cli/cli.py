@@ -34,6 +34,7 @@ from .gpio.commands import gpio
 from .openocd.commands import openocd
 from .python.commands import python
 from .wifi.commands import _wifi
+from .util import check_version
 
 def _decode_environment():
     for key in os.environ:
@@ -45,7 +46,8 @@ def _decode_environment():
 @click.option('--version', 'see_version', is_flag=True, help='See package version')
 @click.option('--debug', 'debug', is_flag=True, help='Show debug output', default=False)
 @click.option('--colorize', 'colorize', is_flag=True, help='Color output', default=False)
-def cli(ctx=None, see_version=None, debug=False, colorize=False):
+@click.option('--version-check/--no-version-check', is_flag=True, help='Check for new version on PyPI', default=True)
+def cli(ctx=None, see_version=None, debug=False, colorize=False, version_check=True):
     """
         Lager CLI
     """
@@ -61,6 +63,8 @@ def cli(ctx=None, see_version=None, debug=False, colorize=False):
         os_args = click.get_os_args()
         help_invoked = '--help' in os_args
         skip_auth = ctx.invoked_subcommand in ('login', 'logout', 'set', 'devenv', 'exec') or help_invoked
+        if version_check and not skip_auth:
+            check_version('lager-cli', __version__)
         setup_context(ctx, debug, colorize, skip_auth)
 
 cli.add_command(_gateway)

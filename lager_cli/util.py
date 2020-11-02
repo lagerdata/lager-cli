@@ -5,6 +5,7 @@
 """
 import sys
 import math
+from distutils.version import StrictVersion
 import pathlib
 import enum
 import os
@@ -12,6 +13,7 @@ import json
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 from io import BytesIO
 import yaml
+import requests
 import click
 import trio
 import lager_trio_websocket as trio_websocket
@@ -19,6 +21,8 @@ import wsproto.frame_protocol as wsframeproto
 from .matchers import iter_streams
 from .safe_unpickle import restricted_loads
 from .exceptions import OutputFormatNotSupported
+from . import __version__
+
 
 FAILED_TO_RETRIEVE_EXIT_CODE = -1
 SIGTERM_EXIT_CODE = 124
@@ -196,3 +200,26 @@ def zip_dir(root, max_content_size=math.inf):
                 with open(full_name, 'rb') as f:
                     zip_archive.writestr(fileinfo, f.read(), ZIP_DEFLATED)
     return archive.getbuffer()
+
+
+_VERSION_MESSAGE = """WARNING: You are using {package_name} version {this_version}; however, version {newest_version} is available.
+You should consider upgrading via the 'pip install -U {package_name}' command."""
+
+
+def check_version(package_name, current_version):
+    """
+    Check whether `package_name` has a version available that is newer than `current_version`
+    """
+    url = 'https://pypi.org/pypi/{package_name}/json'.format(package_name=package_name)
+    this_version = StrictVersion(current_version)
+    try:
+        data = requests.get(url, timeout=(3, 3)).json()
+        newest_version = max(StrictVersion(key) for key in data["releases"].keys())
+        if this_version < newest_version:
+            formatted_message = _VERSION_MESSAGE.format(
+                package_name=package_name,
+                this_version=this_version,
+                newest_version=newest_version)
+            click.secho(formatted_message, err=True, fg='yellow')
+    except Exception as exc:
+        pass

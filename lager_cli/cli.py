@@ -34,6 +34,7 @@ from .gpio.commands import gpio
 from .openocd.commands import openocd
 from .python.commands import python
 from .wifi.commands import _wifi
+from .serial_ports.commands import serial_ports
 from .util import check_version
 
 def _decode_environment():
@@ -89,6 +90,7 @@ cli.add_command(gpio)
 cli.add_command(openocd)
 cli.add_command(python)
 cli.add_command(_wifi)
+cli.add_command(serial_ports)
 
 def setup_context(ctx, debug, colorize, skip_auth):
     """

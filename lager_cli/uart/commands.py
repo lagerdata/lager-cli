@@ -18,7 +18,7 @@ def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
 
     if not serial_device:
         raise click.UsageError(
-            '--serial-device required',
+            '--serial-port required',
             ctx=ctx,
         )
 
@@ -47,7 +47,7 @@ def do_uart(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
 @click.command()
 @click.pass_context
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
-@click.option('--serial-device', help='Gateway serial port device path', metavar='path')
+@click.option('--serial-device', '--serial-port', help='Gateway serial port device path', metavar='path')
 @click.option('--baudrate', help='Serial baud rate', type=int, default=None)
 @click.option('--bytesize', help='Number of data bits', type=click.Choice(['5', '6', '7', '8']), default=None)
 @click.option('--parity', help='Parity check', type=click.Choice(['none', 'even', 'odd', 'mark', 'space']), default=None)

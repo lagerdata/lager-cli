@@ -61,8 +61,9 @@ def _do_exit(exit_code):
 @click.option('--kill', is_flag=True, default=False, help='Terminate a running python script')
 @click.option('--signal', 'signum', type=click.INT, default=signal.SIGTERM, help='Signal to use with --kill', show_default=True)
 @click.option('--timeout', type=click.INT, required=False, help='Max runtime in seconds for the python script')
+@click.option('--detach', '-d', is_flag=True, required=False, default=False, help='Detach')
 @click.argument('args', nargs=-1)
-def python(ctx, runnable, gateway, image, env, passenv, kill, signum, timeout, args):
+def python(ctx, runnable, gateway, image, env, passenv, kill, signum, timeout, detach, args):
     """
         Run a python script on the gateway
     """
@@ -81,6 +82,7 @@ def python(ctx, runnable, gateway, image, env, passenv, kill, signum, timeout, a
     post_data = [
         ('image', image),
         ('stdout_is_stderr', stdout_is_stderr()),
+        ('detach', '1' if detach else '0'),
     ]
     post_data.extend(
         zip(itertools.repeat('args'), args)

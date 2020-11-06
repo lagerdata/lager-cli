@@ -24,7 +24,7 @@ from ..status import run_job_output
 @click.option('--xonxoff/--no-xonxoff', default=None, help='Enable/disable software XON/XOFF flow control')
 @click.option('--rtscts/--no-rtscts', default=None, help='Enable/disable hardware RTS/CTS flow control')
 @click.option('--dsrdtr/--no-dsrdtr', default=None, help='Enable/disable hardware DSR/DTR flow control')
-@click.option('--test-runner', help='End the UART session when end-of-test is detected', type=click.Choice(['none', 'unity']), default='unity')
+@click.option('--test-runner', help='End the UART session when end-of-test is detected', default='unity')
 @click.option('--interactive', is_flag=True, help='Run as an interactive TTY session', default=False)
 @click.option('--message-timeout', help='Message timeout', type=click.FLOAT, default=math.inf)
 @click.option('--overall-timeout', help='Overall timeout', type=click.FLOAT, default=math.inf)
@@ -43,9 +43,11 @@ from ..status import run_job_output
     default=True)
 @click.option('--verify/--no-verify', help='Verify image successfully flashed', default=True)
 @click.option('--display-job-id', default=False, is_flag=True)
+@click.option('--success-regex', help='Line regex for detecting a successful test. Will be passed to Python\'s re.compile', default=None, required=False)
+@click.option('--failure-regex', help='Line regex for detecting a failed test. Will be passed to Python\'s re.compile', default=None, required=False)
 def testrun(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, xonxoff, rtscts,
             dsrdtr, test_runner, interactive, message_timeout, overall_timeout, hexfile, binfile,
-            preverify, verify, display_job_id):
+            preverify, verify, display_job_id, success_regex, failure_regex):
     """
         Flash and run test on a DUT connected to a gateway
     """
@@ -74,5 +76,5 @@ def testrun(ctx, gateway, serial_device, baudrate, bytesize, parity, stopbits, x
     connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)
     run_job_output(
         connection_params, test_runner, interactive, None, message_timeout,
-        overall_timeout, None, ctx.obj.debug,
+        overall_timeout, None, ctx.obj.debug, success_regex, failure_regex,
     )

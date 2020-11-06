@@ -1,4 +1,5 @@
 import sys
+import re
 import enum
 import click
 
@@ -6,10 +7,12 @@ def test_matcher_factory(test_runner):
     """
         Return matcher for named test_runner
     """
-    if test_runner == 'unity':
-        return UnityMatcher
     if test_runner is None or test_runner == 'none':
         return EmptyMatcher
+    if test_runner == 'unity':
+        return UnityMatcher
+    if test_runner.startswith('endswith:'):
+        return EndsWithMatcher
 
     raise ValueError(f'Unknown test matcher {test_runner}')
 
@@ -76,7 +79,7 @@ def iter_streams(response):
 class UnityMatcher:
     summary_separator = b'-----------------------'
 
-    def __init__(self, io):
+    def __init__(self, io, _success_regex, _failure_regex):
         self.state = b''
         self.separator = None
         self.has_fail = False
@@ -121,7 +124,7 @@ class UnityMatcher:
         return 0
 
 class EmptyMatcher:
-    def __init__(self, io):
+    def __init__(self, io, _success_regex, _failure_regex):
         self.io = io
 
     def feed(self, data):
@@ -133,3 +136,49 @@ class EmptyMatcher:
     @property
     def exit_code(self):
         return 0
+
+class EndsWithMatcher:
+    def __init__(self, io, success_regex, failure_regex):
+        self.io = io
+        self.success_regex = None
+        self.failure_regex = None
+        if success_regex:
+            self.success_regex = re.compile(success_regex.encode())
+        if failure_regex:
+            self.failure_regex = re.compile(failure_regex.encode())
+        self.state = b''
+        self._exit_code = 0
+
+    def feed(self, data):
+        data = self.state + data
+        lines = data.split(b'\n')
+        if data.endswith(b'\n'):
+            self.state = b''
+        else:
+            self.state = lines[-1]
+            lines = lines[:-1]
+
+        for line in lines:
+            color = None
+            failed = False
+            if self.failure_regex:
+                if self.failure_regex.search(line):
+                    failed = True
+                    color = 'red'
+                    self._exit_code = 1
+                    line = line.decode()
+            if not failed and self.success_regex:
+                if self.success_regex.search(line):
+                    color = 'green'
+                    line = line.decode()
+
+            self.io.output(line, fg=color, flush=False)
+            self.io.output(b'\n', flush=True)
+
+    def done(self):
+        if self.state:
+            self.io.output(self.state)
+
+    @property
+    def exit_code(self):
+        return self._exit_code

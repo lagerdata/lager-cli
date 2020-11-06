@@ -170,12 +170,16 @@ class StandardIO:
         """
         pass
 
-    def output(self, data):
+    def output(self, data, fg=None, flush=False):
         """
             Send some data to stdout
         """
-        click.echo(data, nl=False)
-        sys.stdout.flush()
+        if fg:
+            click.secho(data, nl=False, fg=fg)
+        else:
+            click.echo(data, nl=False)
+        if flush:
+            sys.stdout.flush()
 
     def read(self):
         """
@@ -193,7 +197,7 @@ class StandardIO:
 
 
 @retry(reraise=True, sleep=trio.sleep, stop=stop_after_attempt(4), wait=wait_fixed(2), retry=retry_if_exception_type(trio_websocket.ConnectionRejected))
-async def display_job_output(connection_params, test_runner, interactive, line_ending, message_timeout, overall_timeout, eof_timeout):
+async def display_job_output(connection_params, test_runner, interactive, line_ending, message_timeout, overall_timeout, eof_timeout, success_regex=None, failure_regex=None):
     """
         Display job output from websocket
     """
@@ -204,7 +208,7 @@ async def display_job_output(connection_params, test_runner, interactive, line_e
     else:
         io_source = StandardIO()
     try:
-        matcher = match_class(io_source)
+        matcher = match_class(io_source, success_regex, failure_regex)
         send_channel, receive_channel = trio.open_memory_channel(0)
         allow_reader = True
         if platform.system() == 'Windows' and not interactive:
@@ -224,7 +228,7 @@ async def display_job_output(connection_params, test_runner, interactive, line_e
         if io_source:
             io_source.shutdown()
 
-def run_job_output(connection_params, test_runner, interactive, line_ending, message_timeout, overall_timeout, eof_timeout, debug=False):
+def run_job_output(connection_params, test_runner, interactive, line_ending, message_timeout, overall_timeout, eof_timeout, debug=False, success_regex=None, failure_regex=None):
     """
         Run async task to get job output from websocket
     """
@@ -243,7 +247,7 @@ def run_job_output(connection_params, test_runner, interactive, line_ending, mes
         raise ValueError('Invalid line ending')
 
     try:
-        matcher = trio.run(display_job_output, connection_params, test_runner, interactive, line_ending, message_timeout, overall_timeout, eof_timeout)
+        matcher = trio.run(display_job_output, connection_params, test_runner, interactive, line_ending, message_timeout, overall_timeout, eof_timeout, success_regex, failure_regex)
         click.get_current_context().exit(matcher.exit_code)
     except trio.TooSlowError:
         suffix = '' if overall_timeout == 1 else 's'

@@ -137,6 +137,16 @@ class EmptyMatcher:
     def exit_code(self):
         return 0
 
+def safe_decode(s):
+    """
+        Try to decode s; if it fails return the escaped string representation
+        of the bytes
+    """
+    try:
+        return s.decode()
+    except UnicodeDecodeError:
+        return str(s).replace("b'", '', 1)[:-1]
+
 class EndsWithMatcher:
     def __init__(self, io, success_regex, failure_regex):
         self.io = io
@@ -166,11 +176,11 @@ class EndsWithMatcher:
                     failed = True
                     color = 'red'
                     self._exit_code = 1
-                    line = line.decode()
+                    line = safe_decode(line)
             if not failed and self.success_regex:
                 if self.success_regex.search(line):
                     color = 'green'
-                    line = line.decode()
+                    line = safe_decode(line)
 
             self.io.output(line, fg=color, flush=False)
             self.io.output(b'\n', flush=True)

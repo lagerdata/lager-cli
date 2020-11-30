@@ -158,6 +158,8 @@ class TTYIO:
         if char == b'\x03':
             raise KeyboardInterrupt
 
+        if char == b'\r':
+            return self.line_ending or char
         return char
 
 class StandardIO:

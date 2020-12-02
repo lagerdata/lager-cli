@@ -391,6 +391,19 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/canbus/dump'.format(quote(gateway))
         return self.post(url, json={'can_options': can_options})
 
+    def read_adc(self, gateway, channel, average_count, result_count, output):
+        """
+            Read the ADC
+        """
+        data = {
+            'channel': channel,
+            'average_count': average_count,
+            'result_count': result_count,
+            'output': output,
+        }
+        url = 'gateway/{}/adc/read'.format(quote(gateway))
+        return self.post(url, json=data)
+
 
 class LagerContext:  # pylint: disable=too-few-public-methods
     """

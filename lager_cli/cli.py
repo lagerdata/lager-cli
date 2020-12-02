@@ -14,6 +14,7 @@ from .config import read_config_file
 from .context import LagerContext
 
 from .gateway.commands import _gateway
+from .adc.commands import adc
 from .setter.commands import setter
 from .lister.commands import lister
 from .auth import load_auth
@@ -69,6 +70,7 @@ def cli(ctx=None, see_version=None, debug=False, colorize=False, version_check=T
         setup_context(ctx, debug, colorize, skip_auth)
 
 cli.add_command(_gateway)
+cli.add_command(adc)
 cli.add_command(setter)
 cli.add_command(lister)
 cli.add_command(login)

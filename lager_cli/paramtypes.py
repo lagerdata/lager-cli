@@ -246,3 +246,35 @@ class CanFilterType(click.ParamType):
 
     def __repr__(self):
         return 'CAN_FILTER'
+
+class ADCChannelType(click.ParamType):
+    """
+        Type to represent a command line argument for a CAN frame
+    """
+    name = 'CHANNEL'
+
+    SPECIAL = ('VTREF', 'VIO')
+    def convert(self, value, param, ctx):
+        """
+            Parse out an ADC Channel
+        """
+        if value in self.SPECIAL:
+            return value
+        if '-' in value:
+            start, end = value.split('-', 1)
+            start = int(start, 10)
+            end = int(end, 10)
+            if start < 0 or start > 5:
+                self.fail('Range start must be 0-5')
+            if end < 0 or end > 5:
+                self.fail('Range end must be 0-5')
+            if end <= start:
+                self.fail('Range start must be before range end')
+            return {'start': start, 'end': end}
+        value = int(value, 10)
+        if value < 0 or value > 5:
+            self.fail('Read register must be 0-5')
+        return {'register': value}
+
+    def __repr__(self):
+        return 'ADC_CHANNEL'

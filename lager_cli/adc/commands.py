@@ -7,6 +7,7 @@
 import click
 from ..context import get_default_gateway
 from ..paramtypes import ADCChannelType
+from ..util import stream_output
 
 @click.group(name='adc')
 def adc():
@@ -37,8 +38,9 @@ def _get_default_output():
 @click.option('--average-count', required=False, type=_AVERAGE_COUNT, help='Averaging count')
 @click.option('--result-count', type=_RESULT_COUNT, required=False, help='Number of results to return in single-channel mode')
 @click.option('--output', type=_OUTPUT_TYPE, required=False, help='Output mode')
+@click.option('-f', '--follow', required=False, default=False, is_flag=True, help='Stream output')
 @click.argument('CHANNEL', type=ADCChannelType(), required=True)
-def read(ctx, gateway, average_count, result_count, output, channel):
+def read(ctx, gateway, average_count, result_count, output, follow, channel):
     """
         Say hello to gateway
     """
@@ -64,8 +66,11 @@ def read(ctx, gateway, average_count, result_count, output, channel):
         output = output.lower()
 
     session = ctx.obj.session
-    resp = session.read_adc(gateway, channel, average_count, result_count, output)
-    print(resp.json())
+    resp = session.read_adc(gateway, channel, average_count, result_count, output, follow)
+    if follow:
+        stream_output(resp)
+    else:
+        print(resp.json())
 
 
 @adc.command()

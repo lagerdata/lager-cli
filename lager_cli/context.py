@@ -121,7 +121,10 @@ class LagerSession(BaseUrlSession):
                 click.secho(error['description'], fg='red', err=True)
             ctx.exit(1)
         if r.status_code >= 500:
-            click.secho('Something went wrong with the Lager API', fg='red', err=True)
+            if ctx.obj.debug:
+                print(r.text)
+            else:
+                click.secho('Something went wrong with the Lager API', fg='red', err=True)
             ctx.exit(1)
 
         r.raise_for_status()

@@ -12,7 +12,7 @@ from ..util import stream_output
 @click.group(name='adc')
 def adc():
     """
-        Lager adc commands
+        ADC (analog/digital converter) commands
     """
     pass
 
@@ -42,7 +42,7 @@ def _get_default_output():
 @click.argument('CHANNEL', type=ADCChannelType(), required=True)
 def read(ctx, gateway, average_count, result_count, output, follow, channel):
     """
-        Say hello to gateway
+        Read the analog-digital convertor on the gateway
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
@@ -77,4 +77,7 @@ def read(ctx, gateway, average_count, result_count, output, follow, channel):
 @click.pass_context
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 def settings(ctx, gateway):
+    """
+        (Currently not implemented) Set defaults for average-count, result-count, and output
+    """
     pass

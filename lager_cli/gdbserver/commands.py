@@ -9,8 +9,8 @@ import trio
 from .tunnel import serve_tunnel, serve_local_tunnel
 from ..context import get_default_gateway, ensure_debugger_running
 
-def _run_gdbserver_cloud(ctx, host, port, gateway):
-    connection_params = ctx.obj.websocket_connection_params(socktype='gdb-tunnel', gateway_id=gateway)
+def _run_gdbserver_cloud(ctx, host, port, gateway, socktype):
+    connection_params = ctx.obj.websocket_connection_params(socktype=socktype, gateway_id=gateway)
     try:
         trio.run(serve_tunnel, host, port, connection_params, 'GDB')
     except PermissionError as exc:
@@ -62,9 +62,15 @@ def gdbserver(ctx, gateway, host, port, local, fork):
     if gateway is None:
         gateway = get_default_gateway(ctx)
 
-    ensure_debugger_running(gateway, ctx)
+    status = ensure_debugger_running(gateway, ctx)
+    if 'Listening on port 3333' in status['logfile']:
+        socktype = 'gdb-tunnel'
+    elif 'Logging started @' in status['logfile']:
+        socktype = 'jl-tunnel'
+    else:
+        raise RuntimeError('Unknown tunnel type')
 
     if local:
         _run_gdbserver_local(ctx, host, port, gateway, fork)
     else:
-        _run_gdbserver_cloud(ctx, host, port, gateway)
+        _run_gdbserver_cloud(ctx, host, port, gateway, socktype)

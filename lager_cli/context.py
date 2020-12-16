@@ -441,6 +441,8 @@ class LagerContext:  # pylint: disable=too-few-public-methods
         """
         if socktype == 'job':
             path = f'/ws/job/{kwargs["job_id"]}'
+        elif socktype == 'jl-tunnel':
+            path = f'/ws/gateway/{kwargs["gateway_id"]}/gdb-tunnel/2331'
         elif socktype == 'gdb-tunnel':
             path = f'/ws/gateway/{kwargs["gateway_id"]}/gdb-tunnel/3333'
         elif socktype == 'openocd-tunnel':
@@ -508,6 +510,7 @@ def ensure_debugger_running(gateway, ctx):
     if not gateway_status['running']:
         click.secho('Gateway debugger is not running. Please use `lager connect` to run it', fg='red', err=True)
         ctx.exit(1)
+    return gateway_status
 
 class CIEnvironment(Enum):
     """

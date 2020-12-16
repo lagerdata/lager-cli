@@ -17,12 +17,12 @@ def adc():
     pass
 
 _RESULT_COUNT = click.Choice(('1', '4', '8', '12', '16'))
-_AVERAGE_COUNT = click.Choice(('none', '1', '4', '8', '16', '32'))
+_AVERAGE_COUNT = click.Choice(('none', '4', '8', '16', '32'))
 _OUTPUT_TYPE = click.Choice(('raw', 'mV'), case_sensitive=False)
 
 def _get_default_average_count():
     # TODO: implement
-    return 1
+    return 0
 
 def _get_default_result_count():
     # TODO: implement
@@ -36,11 +36,9 @@ def _get_default_output():
 @click.pass_context
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.option('--average-count', required=False, type=_AVERAGE_COUNT, help='Averaging count')
-@click.option('--result-count', type=_RESULT_COUNT, required=False, help='Number of results to return in single-channel mode')
 @click.option('--output', type=_OUTPUT_TYPE, required=False, help='Output mode')
-@click.option('-f', '--follow', required=False, default=False, is_flag=True, help='Stream output')
-@click.argument('CHANNEL', type=ADCChannelType(), required=True)
-def read(ctx, gateway, average_count, result_count, output, follow, channel):
+@click.argument('CHANNEL', type=ADCChannelType(), required=False)
+def read(ctx, gateway, average_count, output, channel):
     """
         Say hello to gateway
     """
@@ -55,22 +53,15 @@ def read(ctx, gateway, average_count, result_count, output, follow, channel):
         else:
             average_count = int(average_count, 10)
 
-    if result_count is None:
-        result_count = _get_default_result_count()
-    else:
-        result_count = int(result_count, 10)
-
     if output is None:
         output = _get_default_output()
     else:
         output = output.lower()
 
     session = ctx.obj.session
-    resp = session.read_adc(gateway, channel, average_count, result_count, output, follow)
-    if follow:
-        stream_output(resp)
-    else:
-        print(resp.json())
+    resp = session.read_adc(gateway, channel, average_count, output)
+
+    print(resp.json())
 
 
 @adc.command()

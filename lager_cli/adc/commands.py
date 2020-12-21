@@ -7,7 +7,6 @@
 import click
 from ..context import get_default_gateway
 from ..paramtypes import ADCChannelType
-from ..util import stream_output
 
 @click.group(name='adc')
 def adc():

@@ -4,7 +4,7 @@ Lager CLI
 A Command Line Interface for Lager Data
 """
 
-__version__ = '0.1.57'
+__version__ = '0.1.60'
 
 SUPPORTED_DEVICES = (
     'at91samdexx',

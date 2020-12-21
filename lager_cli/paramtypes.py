@@ -273,8 +273,8 @@ class ADCChannelType(click.ParamType):
             return {'start': start, 'end': end}
         value = int(value, 10)
         if value < 0 or value > 5:
-            self.fail('Read register must be 0-5')
-        return {'register': value}
+            self.fail('Read channel must be 0-5')
+        return {'channel': value}
 
     def __repr__(self):
         return 'ADC_CHANNEL'

@@ -121,7 +121,7 @@ class LagerSession(BaseUrlSession):
                 click.secho(error['description'], fg='red', err=True)
             ctx.exit(1)
         if r.status_code >= 500:
-            if ctx.obj.debug:
+            if True:
                 print(r.text)
             else:
                 click.secho('Something went wrong with the Lager API', fg='red', err=True)
@@ -394,19 +394,17 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/canbus/dump'.format(quote(gateway))
         return self.post(url, json={'can_options': can_options})
 
-    def read_adc(self, gateway, channel, average_count, result_count, output, follow):
+    def read_adc(self, gateway, channel, average_count, output):
         """
             Read the ADC
         """
         data = {
             'channel': channel,
             'average_count': average_count,
-            'result_count': result_count,
-            'output': output,
-            'follow': follow,
+            'output': output
         }
         url = 'gateway/{}/adc/read'.format(quote(gateway))
-        return self.post(url, json=data, stream=follow)
+        return self.post(url, json=data)
 
 
 class LagerContext:  # pylint: disable=too-few-public-methods

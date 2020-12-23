@@ -278,3 +278,31 @@ class ADCChannelType(click.ParamType):
 
     def __repr__(self):
         return 'ADC_CHANNEL'
+
+
+class CanbusRange(click.ParamType):
+    """
+        Type to represent a command line argument for a CAN frame
+    """
+    name = 'CANRange'
+
+    def convert(self, value, param, ctx):
+        """
+            Parse out a CAN interface range
+        """
+        output = []
+        for part in value.split(','):
+            rangevals = part.split('-')
+            if len(rangevals) == 1:
+                output.append(int(rangevals[0]))
+            elif len(rangevals) == 2:
+                start = int(rangevals[0], 10)
+                end = int(rangevals[1], 10) + 1
+                output.extend(range(start, end))
+            else:
+                self.fail(f'Invalid range {part}')
+
+        return sorted(set(output))
+
+    def __repr__(self):
+        return 'CAN_RANGE'

@@ -373,26 +373,41 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/wifi/delete-connection'.format(quote(gateway))
         return self.post(url, json={'ssid': ssid})
 
-    def can_up(self, gateway, bitrate):
+    def can_up(self, gateway, bitrate, interfaces):
         """
             Bring up the CAN bus
         """
         url = 'gateway/{}/canbus/up'.format(quote(gateway))
-        return self.post(url, json={'bitrate': bitrate})
+        return self.post(url, json={'bitrate': bitrate, 'interfaces': interfaces})
 
-    def can_send(self, gateway, frames):
+    def can_down(self, gateway, interfaces):
+        """
+            Bring down the CAN bus
+        """
+        url = 'gateway/{}/canbus/down'.format(quote(gateway))
+        return self.post(url, json={'interfaces': interfaces})
+
+    def can_list(self, gateway):
+        """
+            List can buses
+        """
+        url = 'gateway/{}/canbus/list'.format(quote(gateway))
+        return self.get(url)
+
+    def can_send(self, gateway, frames, interface):
         """
             Send one or more frames on CAN bus
         """
         url = 'gateway/{}/canbus/send'.format(quote(gateway))
-        return self.post(url, json={'frames': [frame._asdict() for frame in frames]})
+        frames = [frame._asdict() for frame in frames]
+        return self.post(url, json={'interface': interface, 'frames': frames})
 
-    def can_dump(self, gateway, can_options):
+    def can_dump(self, gateway, can_options, interface):
         """
             Dump frames from CAN bus
         """
         url = 'gateway/{}/canbus/dump'.format(quote(gateway))
-        return self.post(url, json={'can_options': can_options})
+        return self.post(url, json={'can_options': can_options, 'interface': interface})
 
     def read_adc(self, gateway, channel, average_count, output):
         """

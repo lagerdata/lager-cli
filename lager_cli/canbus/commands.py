@@ -6,7 +6,7 @@
 import math
 import click
 from ..context import get_default_gateway
-from ..paramtypes import CanFrameType, CanFilterType
+from ..paramtypes import CanFrameType, CanFilterType, CanbusRange
 from ..status import run_job_output
 
 @click.group(name='canbus')
@@ -16,20 +16,76 @@ def canbus():
     """
     pass
 
-@canbus.command()
+@canbus.command('list')
 @click.pass_context
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+def list_(ctx, gateway):
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
+
+    session = ctx.obj.session
+    resp = session.can_list(gateway)
+    for interface in resp.json()['interfaces']:
+        print(interface)
+
+
+@canbus.command()
+@click.pass_context
+@click.argument('interfaces', type=CanbusRange())
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
 @click.option('--bitrate', required=True, type=click.INT, help='bus bitrate e.g. 500000, 250000, etc')
-def up(ctx, gateway, bitrate):
+def up(ctx, interfaces, gateway, bitrate):
     """
         Bring up the CAN Bus at the specified bitrate
+
+        INTERFACES can be an integer, a dash-separated range of integers, or a comma-separated list
+        of ranges or integers.
+
+        Examples:
+
+            \b
+            lager canbus up 0      # Bring up canbus interface 0
+            lager canbus up 0-1    # Bring up canbus interfaces 0 and 1
+            lager canbus up 0,2    # Bring up canbus interfaces 0 and 2
+            lager canbus up 0-1,3  # Bring up canbus interfaces 0, 1, and 3
+
+        Use `lager canbus list` to view available INTERFACES.
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
 
     session = ctx.obj.session
-    resp = session.can_up(gateway, bitrate)
+    resp = session.can_up(gateway, bitrate, interfaces)
     print(resp.json())
+
+@canbus.command()
+@click.pass_context
+@click.argument('interfaces', type=CanbusRange())
+@click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+def down(ctx, interfaces, gateway):
+    """
+        Bring down the CAN Bus at the specified bitrate
+
+        INTERFACES can be an integer, a dash-separated range of integers, or a comma-separated list
+        of ranges or integers.
+
+        Examples:
+
+            \b
+            lager canbus down 0      # Bring down canbus interface 0
+            lager canbus down 0-1    # Bring down canbus interfaces 0 and 1
+            lager canbus down 0,2    # Bring down canbus interfaces 0 and 2
+            lager canbus down 0-1,3  # Bring down canbus interfaces 0, 1, and 3
+
+        Use `lager canbus list` to view available INTERFACES.
+    """
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
+
+    session = ctx.obj.session
+    resp = session.can_down(gateway, interfaces)
+    print(resp.json())
+
 
 @canbus.command()
 @click.pass_context

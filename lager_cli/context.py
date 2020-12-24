@@ -394,7 +394,7 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/canbus/list'.format(quote(gateway))
         return self.get(url)
 
-    def can_send(self, gateway, frames, interface):
+    def can_send(self, gateway, interface, frames):
         """
             Send one or more frames on CAN bus
         """
@@ -402,12 +402,12 @@ class LagerSession(BaseUrlSession):
         frames = [frame._asdict() for frame in frames]
         return self.post(url, json={'interface': interface, 'frames': frames})
 
-    def can_dump(self, gateway, can_options, interface):
+    def can_dump(self, gateway, interface, can_options):
         """
             Dump frames from CAN bus
         """
         url = 'gateway/{}/canbus/dump'.format(quote(gateway))
-        return self.post(url, json={'can_options': can_options, 'interface': interface})
+        return self.post(url, json={'interface': interface, 'can_options': can_options})
 
     def read_adc(self, gateway, channel, average_count, output):
         """

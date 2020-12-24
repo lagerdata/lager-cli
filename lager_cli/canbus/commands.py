@@ -90,10 +90,11 @@ def down(ctx, interfaces, gateway):
 @canbus.command()
 @click.pass_context
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+@click.argument('interface', type=click.INT, required=True)
 @click.argument('can_frames', required=True, nargs=-1, type=CanFrameType())
-def send(ctx, gateway, can_frames):
+def send(ctx, gateway, interface, can_frames):
     """
-        Send a frame on the CAN bus
+        Send a frame on the specified CAN bus
 
         CAN_FRAME format:
 
@@ -127,15 +128,16 @@ def send(ctx, gateway, can_frames):
         gateway = get_default_gateway(ctx)
 
     session = ctx.obj.session
-    resp = session.can_send(gateway, can_frames)
+    resp = session.can_send(gateway, interface, can_frames)
     print(resp.json())
 
 
 @canbus.command()
 @click.pass_context
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
+@click.argument('interface', type=click.INT, required=True)
 @click.argument('filters', required=False, nargs=-1, type=CanFilterType())
-def dump(ctx, gateway, filters):
+def dump(ctx, gateway, interface, filters):
     """
         Dump CAN bus traffic (use Ctrl-C to terminate)
 
@@ -150,12 +152,12 @@ def dump(ctx, gateway, filters):
         Examples:
 
         \b
-        lager canbus dump 92345678:DFFFFFFF
-            (match only for extended CAN ID 12345678)
+        lager canbus dump 0 92345678:DFFFFFFF
+            (match only for extended CAN ID 12345678 on interface 0)
 
         \b
-        lager canbus dump 123:7FF
-            (matches CAN ID 123 - including EFF and RTR frames)
+        lager canbus dump 0 123:7FF
+            (matches CAN ID 123 - including EFF and RTR frames on interface 0)
     """
     if gateway is None:
         gateway = get_default_gateway(ctx)
@@ -164,7 +166,7 @@ def dump(ctx, gateway, filters):
     can_options = {
         'filters': [canfilter._asdict() for canfilter in filters],
     }
-    can_session = session.can_dump(gateway, can_options).json()
+    can_session = session.can_dump(gateway, interface, can_options).json()
     job_id = can_session['test_run']['id']
 
     connection_params = ctx.obj.websocket_connection_params(socktype='job', job_id=job_id)

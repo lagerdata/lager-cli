@@ -56,7 +56,7 @@ def up(ctx, interfaces, gateway, bitrate):
 
     session = ctx.obj.session
     resp = session.can_up(gateway, bitrate, interfaces)
-    print(resp.json())
+    print(resp.json()['message'])
 
 @canbus.command()
 @click.pass_context
@@ -84,7 +84,7 @@ def down(ctx, interfaces, gateway):
 
     session = ctx.obj.session
     resp = session.can_down(gateway, interfaces)
-    print(resp.json())
+    print(resp.json()['message'])
 
 
 @canbus.command()

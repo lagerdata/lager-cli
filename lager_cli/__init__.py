@@ -9,6 +9,7 @@ __version__ = '0.1.62'
 SUPPORTED_DEVICES = (
     'at91samdexx',
     'at91samdgxx',
+    'at91samdxx',
     'atsame70',
     'cc3220s',
     'cc3220sf',

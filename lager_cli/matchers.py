@@ -128,7 +128,7 @@ class EmptyMatcher:
         self.io = io
 
     def feed(self, data):
-        self.io.output(data)
+        self.io.output(data, flush=True)
 
     def done(self):
         pass

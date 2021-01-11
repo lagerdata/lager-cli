@@ -142,7 +142,7 @@ class TTYIO:
         """
         termios.tcsetattr(self.stdin_fileno, termios.TCSADRAIN, self.old_settings)
 
-    def output(self, data):
+    def output(self, data, fg=None, flush=False):
         """
             Output some data to the TTY
         """

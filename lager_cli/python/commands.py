@@ -47,7 +47,7 @@ def _do_exit(exit_code):
 @click.pass_context
 @click.argument('runnable', required=False, type=click.Path(exists=True))
 @click.option('--gateway', required=False, help='ID of gateway to which DUT is connected')
-@click.option('--image', default='lagerdata/gatewaypy3:v0.1.60', help='Docker image to use for running script')
+@click.option('--image', default='lagerdata/gatewaypy3:v0.1.61', help='Docker image to use for running script')
 @click.option(
     '--env',
     multiple=True, type=EnvVarType(), help='Environment variables to set for the python script. '

@@ -58,8 +58,16 @@ AUTH_TOKEN_KEY = 'LAGER_AUTH_TOKEN'
 REFRESH_TOKEN_KEY = 'LAGER_REFRESH_TOKEN'
 TOKEN_TYPE_KEY = 'LAGER_TOKEN_TYPE'
 SECRET_TOKEN_KEY = 'LAGER_SECRET_TOKEN'
+TOKEN_ID_KEY = 'LAGER_TOKEN_ID'
+TOKEN_SECRET_KEY = 'LAGER_TOKEN_SECRET'
 
 def _load_auth_from_environ(env):
+    if TOKEN_ID_KEY in env and TOKEN_SECRET_KEY in env:
+        token = base64.b64encode(f'{env[TOKEN_ID_KEY]}:{env[TOKEN_SECRET_KEY]}'.encode()).decode()
+        return dict(
+            token=token,
+            type='token',
+        )
     if SECRET_TOKEN_KEY in env:
         return dict(
             token=env[SECRET_TOKEN_KEY],

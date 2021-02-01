@@ -421,6 +421,19 @@ class LagerSession(BaseUrlSession):
         url = 'gateway/{}/adc/read'.format(quote(gateway))
         return self.post(url, json=data)
 
+    def reboot_gateway(self, gateway):
+        """
+            Reboot gateway
+        """
+        url = 'gateway/{}/reboot'.format(quote(gateway))
+        return self.post(url)
+
+    def shutdown_gateway(self, gateway):
+        """
+            shutdown gateway
+        """
+        url = 'gateway/{}/poweroff'.format(quote(gateway))
+        return self.post(url)
 
 class LagerContext:  # pylint: disable=too-few-public-methods
     """

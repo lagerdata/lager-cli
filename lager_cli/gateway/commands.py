@@ -149,3 +149,44 @@ def rename(ctx, gateway, to):
 
     session = ctx.obj.session
     session.rename_gateway(gateway, to)
+
+@_gateway.command()
+@click.pass_context
+@click.option('--gateway', required=False, help='ID of gateway to reboot')
+@click.option('--yes', '-y', is_flag=True, default=False)
+def reboot(ctx, gateway, yes):
+    """
+        Reboot a gateway
+    """
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
+
+    if not yes:
+        yes = click.confirm(f'This will reboot gateway {gateway}, are you sure?')
+
+    if not yes:
+        ctx.abort()
+
+    session = ctx.obj.session
+    session.reboot_gateway(gateway)
+
+
+@_gateway.command()
+@click.pass_context
+@click.option('--gateway', required=False, help='ID of gateway to shut down')
+@click.option('--yes', '-y', is_flag=True, default=False)
+def shutdown(ctx, gateway, yes):
+    """
+        Shut down a gateway
+    """
+    if gateway is None:
+        gateway = get_default_gateway(ctx)
+
+    if not yes:
+        yes = click.confirm(f'This will shut down gateway {gateway}, are you sure?')
+
+    if not yes:
+        ctx.abort()
+
+    session = ctx.obj.session
+    session.shutdown_gateway(gateway)
